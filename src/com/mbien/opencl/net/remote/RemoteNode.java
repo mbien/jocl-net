@@ -16,7 +16,7 @@ import static com.jogamp.common.nio.Buffers.*;
 import static java.util.logging.Level.*;
 
 /**
- *
+ * Represents a remotely accessible node in a network.
  * @author Michael Bien
  */
 public class RemoteNode extends GridNode {
@@ -71,7 +71,7 @@ public class RemoteNode extends GridNode {
                 platforms[i] = new CLRemotePlatform(id, this, factory);
             }
         } catch (IOException ex) {
-            LOGGER.log(WARNING, null, ex);
+            LOGGER.log(WARNING, "can not list remote platforms.", ex);
         }finally{
             if(channel != null) {
                 try {

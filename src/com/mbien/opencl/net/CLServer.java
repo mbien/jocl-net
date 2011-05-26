@@ -4,7 +4,6 @@
 package com.mbien.opencl.net;
 
 import com.jogamp.opencl.CLPlatform;
-import com.mbien.opencl.net.shoal.GMSGridNodeController;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -18,10 +17,10 @@ public class CLServer {
 
 //        LogManager.getLogManager().readConfiguration(new FileInputStream("/home/mbien/log.config"));
 
-        GridNodeController gnc = new GMSGridNodeController("jocl-grid", "jocl-server-"+InetAddress.getLocalHost().getHostName());
-        gnc.startNode();
+        CLNetwork network = CLNetwork.createNetwork("jocl-net");
+        network.startNode("jocl-server-"+InetAddress.getLocalHost().getHostName());
         
-        LocalNode node = gnc.getLocalNode();
+        LocalNode node = network.getLocalNode();
         node.startServer(CLPlatform.listCLPlatforms());
 
     }

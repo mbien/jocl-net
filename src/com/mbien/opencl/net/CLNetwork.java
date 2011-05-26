@@ -4,15 +4,19 @@
 package com.mbien.opencl.net;
 
 import com.mbien.opencl.net.remote.RemoteNode;
+import com.mbien.opencl.net.shoal.GMSGridNodeController;
 import java.util.List;
 
 /**
- *
  * @author Michael Bien
  */
-public abstract interface GridNodeController {
+public abstract class CLNetwork {
 
-    public abstract void startNode();
+    public static CLNetwork createNetwork(String group) {
+        return new GMSGridNodeController(group);
+    }
+
+    public abstract void startNode(String name);
 
     public abstract void shutdownNode();
 

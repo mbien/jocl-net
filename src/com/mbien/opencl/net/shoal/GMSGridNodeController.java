@@ -4,7 +4,7 @@
 package com.mbien.opencl.net.shoal;
 
 import java.util.logging.Logger;
-import com.mbien.opencl.net.GridNodeController;
+import com.mbien.opencl.net.CLNetwork;
 import com.mbien.opencl.net.LocalNode;
 import com.mbien.opencl.net.remote.RemoteNode;
 import com.sun.enterprise.ee.cms.core.CallBack;
@@ -42,28 +42,34 @@ import static java.util.logging.Level.*;
  * Controller for a single GMS grid node.
  * @author Michael Bien
  */
-public class GMSGridNodeController implements GridNodeController {
+public class GMSGridNodeController extends CLNetwork {
 
     private static final String IP_KEY = "MEMBER_IP";
     private static final Logger LOGGER = Logger.getLogger(GMSGridNodeController.class.getName());
 
     private GroupManagementService gms;
+    private LocalNode localNode;
 
     private final List<RemoteNode> nodes;
-    private final LocalNode localNode;
+    private final String group;
 
-
-    public GMSGridNodeController(String group, String name) {
-        this.localNode = new LocalNode(group, name);
+    public GMSGridNodeController(String group) {
         this.nodes = new ArrayList<RemoteNode>();
+        this.group = group;
     }
 
     @Override
-    public void startNode() {
+    public void startNode(String name) {
+
+        if(localNode != null) {
+            throw new RuntimeException("node is already running");
+        }
+
+        localNode = new LocalNode(group, name);
 
         try {
 
-            gms = (GroupManagementService)GMSFactory.startGMSModule(localNode.name, "joclnet", MemberType.CORE, null);
+            gms = (GroupManagementService)GMSFactory.startGMSModule(localNode.name, localNode.group, MemberType.CORE, null);
 
 //            gms.addActionFactory(new JoinNotificationActionFactoryImpl(this));
 //            gms.addActionFactory(new JoinedAndReadyNotificationActionFactoryImpl(logging()));

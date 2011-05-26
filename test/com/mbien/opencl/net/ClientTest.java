@@ -6,7 +6,6 @@ package com.mbien.opencl.net;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLPlatform;
 import com.mbien.opencl.net.remote.RemoteNode;
-import com.mbien.opencl.net.shoal.GMSGridNodeController;
 import java.util.List;
 import org.junit.Test;
 
@@ -17,14 +16,14 @@ import org.junit.Test;
 public class ClientTest {
 
     @Test
-    public void clientTest() {
+    public void serverInfoTest() throws InterruptedException {
 
+        CLNetwork network = CLNetwork.createNetwork("jocl-net");
+        network.startNode("master");
 
-        GridNodeController gnc = new GMSGridNodeController("jocl-grid", "master");
-        gnc.startNode();
+//        Thread.sleep(5000);
 
-
-        List<RemoteNode> remoteNodes = gnc.getRemoteNodes();
+        List<RemoteNode> remoteNodes = network.getRemoteNodes();
 
         System.out.println("grid: "+remoteNodes);
 
@@ -45,6 +44,7 @@ public class ClientTest {
 
         }
 
-        gnc.shutdownNode();
+
+        network.shutdownNode();
     }
 }

@@ -65,10 +65,12 @@ public class LocalNode extends GridNode {
                 int methodID = buffer.getInt();
                 buffer.rewind();
 
-                CLHandler accessor = handlers[accessorID];
-
-                System.out.println("serving "+accessorID+" "+methodID);
-                accessor.handle(channel, methodID);
+                if(accessorID >= 0 && accessorID < handlers.length) {
+                    CLHandler accessor = handlers[accessorID];
+                    accessor.handle(channel, methodID);
+                }else{
+                    LOGGER.warning("ignoring command: ["+accessorID+", "+methodID+"]");
+                }
 
             } catch (Exception ex) {
                 LOGGER.log(SEVERE, "exception in server loop", ex);
@@ -80,7 +82,6 @@ public class LocalNode extends GridNode {
                         LOGGER.log(WARNING, "can not close channel.", ex);
                     }
                 }
-                System.out.println("done");
             }
         }
     }
