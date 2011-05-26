@@ -1,0 +1,7 @@
+build
+dist
+gensrc
+**~
+nbproject/private
+lib/grizzly*
+lib/shoal*
