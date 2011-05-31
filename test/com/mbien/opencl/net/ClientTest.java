@@ -3,6 +3,7 @@
  */
 package com.mbien.opencl.net;
 
+import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLPlatform;
 import com.mbien.opencl.net.remote.RemoteNode;
@@ -27,11 +28,13 @@ public class ClientTest {
 
         System.out.println("grid: "+remoteNodes);
 
+        long time = System.currentTimeMillis();
         for (RemoteNode node : remoteNodes) {
 
             System.out.println(node);
 
             CLPlatform[] platforms = node.listPlatforms();
+//            CLPlatform[] platforms = CLPlatform.listCLPlatforms();
 
             for (CLPlatform platform : platforms) {
                 System.out.println("    "+platform);
@@ -40,9 +43,20 @@ public class ClientTest {
                 for (CLDevice device : devices) {
                     System.out.println("        "+device);
                 }
+
+                System.out.println("        create remote context...");
+                CLContext context = CLContext.create(platform);
+                System.out.println("        "+context.toString());
+                System.out.println("        contextID: "+context.ID);
+                CLDevice[] devices2 = context.getDevices();
+                for (CLDevice device : devices2) {
+                    System.out.println("        "+device+" (context)");
+                }
+                context.release();
             }
 
         }
+        System.out.println("time needed: "+(System.currentTimeMillis()-time));
 
 
         network.shutdownNode();

@@ -3,7 +3,7 @@
  */
 package com.mbien.opencl.net.remote;
 
-import com.jogamp.opencl.CL;
+import com.jogamp.opencl.llb.CL;
 import com.jogamp.opencl.spi.CLAccessorFactory;
 import com.jogamp.opencl.spi.CLInfoAccessor;
 import com.jogamp.opencl.spi.CLPlatformInfoAccessor;

@@ -8,6 +8,7 @@ import com.mbien.opencl.net.shoal.GMSGridNodeController;
 import java.util.List;
 
 /**
+ * Represents a group of nodes in a network.
  * @author Michael Bien
  */
 public abstract class CLNetwork {

@@ -29,14 +29,12 @@ import static java.util.logging.Level.*;
 public class LocalNode extends GridNode {
 
     private static final Logger LOGGER = Logger.getLogger(LocalNode.class.getName());
-    
     private final InetSocketAddress listeningAddress = new InetSocketAddress(9000);
-
     private CLHandler[] handlers;
 
     public LocalNode(String group, String name) {
         super(group, name, null);
-        handlers = new CLHandler[3];
+        handlers = new CLHandler[4];
     }
 
     public void startServer(CLPlatform[] platforms) {
@@ -52,9 +50,9 @@ public class LocalNode extends GridNode {
             return;
         }
 
-        ByteBuffer buffer = newDirectByteBuffer(SIZEOF_BYTE+SIZEOF_INT);
+        ByteBuffer buffer = newDirectByteBuffer(SIZEOF_BYTE + SIZEOF_INT);
 
-        while(true) {
+        while (true) {
             SocketChannel channel = null;
             try {
                 channel = server.accept();
@@ -65,18 +63,18 @@ public class LocalNode extends GridNode {
                 int methodID = buffer.getInt();
                 buffer.rewind();
 
-                if(accessorID >= 0 && accessorID < handlers.length) {
+                if (accessorID >= 0 && accessorID < handlers.length) {
                     CLHandler accessor = handlers[accessorID];
                     accessor.handle(channel, methodID);
-                }else{
-                    LOGGER.warning("ignoring command: ["+accessorID+", "+methodID+"]");
+                } else {
+                    LOGGER.warning("ignoring command: [" + accessorID + ", " + methodID + "]");
                 }
 
             } catch (Exception ex) {
                 LOGGER.log(SEVERE, "exception in server loop", ex);
-            } finally{
-                if(channel != null) {
-                    try{
+            } finally {
+                if (channel != null) {
+                    try {
                         channel.close();
                     } catch (Exception ex) {
                         LOGGER.log(WARNING, "can not close channel.", ex);
@@ -87,18 +85,17 @@ public class LocalNode extends GridNode {
     }
 
     private void insertHandler(int index, CLHandler handler) {
-        if(handlers[index] != null) {
+        if (handlers[index] != null) {
             throw new IllegalStateException("slot not empty");
         }
         handlers[index] = handler;
-
     }
 
     private void initializeHandlers(final CLPlatform[] platforms) {
-        
+
         Map<Long, CLPlatform> platformMap = new HashMap<Long, CLPlatform>(platforms.length);
-        Map<Long, CLDevice> deviceMap     = new HashMap<Long, CLDevice>(platforms.length);
-        
+        Map<Long, CLDevice> deviceMap = new HashMap<Long, CLDevice>(platforms.length);
+
         for (CLPlatform platform : platforms) {
 
             platformMap.put(platform.ID, platform);
@@ -112,51 +109,33 @@ public class LocalNode extends GridNode {
         insertHandler(RemoteNode.SPECIAL_AID, new CLStaticPlatformHandler(platforms));
         insertHandler(RemoteNode.PLATFORM_AID, new CLPlatformHandler(platformMap));
         insertHandler(RemoteNode.DEVICE_AID, new CLDeviceHandler(deviceMap));
-    }
-
-
-    private static abstract class CLHandler {
-        
-        protected abstract void handle(SocketChannel channel, int methodID) throws IOException;
-
-        protected int readInt(SocketChannel channel, ByteBuffer buffer) throws IOException {
-            buffer.limit(SIZEOF_INT);
-            channel.read(buffer);
-            buffer.rewind();
-            return buffer.getInt(0);
-        }
-
-        protected long readLong(SocketChannel channel, ByteBuffer buffer) throws IOException {
-            buffer.limit(SIZEOF_LONG);
-            channel.read(buffer);
-            buffer.rewind();
-            return buffer.getLong(0);
-        }
+        insertHandler(3, new CLContextHandler(CLPlatform.getLowLevelCLInterface()));
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {
 
-        private final CLPlatform[] platforms;
+        final CLPlatform[] platforms;
 
         public CLStaticPlatformHandler(CLPlatform[] platforms) {
+            super(null);
             this.platforms = platforms;
         }
 
         @Override
         public void handle(SocketChannel channel, int methodID) throws IOException {
             ByteBuffer buffer = null;
-            switch(methodID) {
+            switch (methodID) {
                 case RemoteNode.PLATFORM_IDS:
-                    buffer = newDirectByteBuffer(SIZEOF_INT+platforms.length*SIZEOF_LONG);
+                    buffer = newDirectByteBuffer(SIZEOF_INT + platforms.length * SIZEOF_LONG);
                     buffer.putInt(platforms.length);
                     for (CLPlatform platform : platforms) {
                         buffer.putLong(platform.ID);
                     }
                     break;
                 default:
-                    throw new RuntimeException("unexpected methodID "+methodID);
+                    throw new RuntimeException("unexpected methodID " + methodID);
             }
-            if(buffer != null) {
+            if (buffer != null) {
                 buffer.rewind();
                 channel.write(buffer);
             }
@@ -165,9 +144,10 @@ public class LocalNode extends GridNode {
 
     private static class CLPlatformHandler extends CLHandler {
 
-        private final Map<Long, CLPlatform> platformMap;
+        final Map<Long, CLPlatform> platformMap;
 
         public CLPlatformHandler(Map<Long, CLPlatform> platformMap) {
+            super(null);
             this.platformMap = platformMap;
         }
 
@@ -175,15 +155,15 @@ public class LocalNode extends GridNode {
         public void handle(SocketChannel channel, int methodID) throws IOException {
 
             ByteBuffer buffer = newDirectByteBuffer(SIZEOF_LONG);
-            
+
             long platformID = readLong(channel, buffer);
 
             CLPlatform platform = platformMap.get(platformID);
-            if(platform == null) {
-                throw new RuntimeException("unknown platform id: "+platformID);
+            if (platform == null) {
+                throw new RuntimeException("unknown platform id: " + platformID);
             }
 
-            switch(methodID) {
+            switch (methodID) {
                 case CLRemoteInfoAccessor.MID_STRING:
 
                     int infoKey = readInt(channel, buffer);
@@ -192,7 +172,7 @@ public class LocalNode extends GridNode {
                     String string = platform.getInfoString(infoKey);
                     byte[] bytes = string.getBytes();
 
-                    buffer = newDirectByteBuffer(SIZEOF_INT+bytes.length);
+                    buffer = newDirectByteBuffer(SIZEOF_INT + bytes.length);
                     buffer.putInt(bytes.length).put(bytes).rewind();
                     channel.write(buffer);
 
@@ -204,7 +184,7 @@ public class LocalNode extends GridNode {
 
                     // todo optimize
                     CLDevice[] devices = platform.listCLDevices(Type.valueOf(typeFlags));
-                    buffer = newDirectByteBuffer(SIZEOF_INT+devices.length*SIZEOF_LONG);
+                    buffer = newDirectByteBuffer(SIZEOF_INT + devices.length * SIZEOF_LONG);
                     buffer.putInt(devices.length);
                     for (CLDevice device : devices) {
                         buffer.putLong(device.ID);
@@ -215,11 +195,10 @@ public class LocalNode extends GridNode {
                     break;
 
                 default:
-                    throw new RuntimeException("unexpected methodID "+methodID);
+                    throw new RuntimeException("unexpected methodID " + methodID);
             }
 
         }
-
     }
 
     private static class CLDeviceHandler extends CLHandler {
@@ -227,6 +206,7 @@ public class LocalNode extends GridNode {
         private final Map<Long, CLDevice> deviceMap;
 
         public CLDeviceHandler(Map<Long, CLDevice> deviceMap) {
+            super(null);
             this.deviceMap = deviceMap;
         }
 
@@ -238,21 +218,21 @@ public class LocalNode extends GridNode {
             long deviceID = readLong(channel, buffer);
 
             CLDevice device = deviceMap.get(deviceID);
-            if(device == null) {
-                throw new RuntimeException("unknown device id: "+deviceID);
+            if (device == null) {
+                throw new RuntimeException("unknown device id: " + deviceID);
             }
 
             int infoKey = readInt(channel, buffer);
             CLInfoAccessor accessor = device.getCLAccessor();
 
-            switch(methodID) {
+            switch (methodID) {
                 case CLRemoteInfoAccessor.MID_STRING:
 
                     // todo optimize
                     String string = accessor.getString(infoKey);
                     byte[] bytes = string.getBytes();
 
-                    buffer = newDirectByteBuffer(SIZEOF_INT+bytes.length);
+                    buffer = newDirectByteBuffer(SIZEOF_INT + bytes.length);
                     buffer.putInt(bytes.length).put(bytes).rewind();
                     channel.write(buffer);
 
@@ -268,12 +248,10 @@ public class LocalNode extends GridNode {
                     break;
 
                 default:
-                    throw new RuntimeException("unexpected methodID "+methodID);
+                    throw new RuntimeException("unexpected methodID " + methodID);
             }
 
         }
-
     }
-
 
 }

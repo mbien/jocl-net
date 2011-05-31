@@ -4,8 +4,10 @@
 package com.mbien.opencl.net;
 
 import com.jogamp.opencl.CLPlatform;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.logging.LogManager;
 
 /**
  *
