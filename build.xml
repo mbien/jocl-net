@@ -71,4 +71,31 @@
     nbproject/build-impl.xml file. 
 
     -->
+
+    <target name="-pre-compile">
+        
+        <echo message="compiling generator"/>
+        <javac destdir="${basedir}/build/classes"
+               srcdir="${basedir}/src"
+               includes="com/mbien/generator/*"
+               classpath="${run.classpath}"
+               source="${javac.source}" target="${javac.target}"
+               debug="true" debuglevel="lines,vars,source" includeantruntime="false">
+        </javac>
+
+        <echo message="generating binding"/>
+        <java classname="com.mbien.generator.NetworkBindingGenerator">
+            <classpath>
+                <pathelement path="${run.classpath}"/>
+            </classpath>
+        </java>
+
+    </target>
+
+    <target name="-post-clean">
+
+        <delete dir="${basedir}/gensrc"/>
+
+    </target>
+
 </project>

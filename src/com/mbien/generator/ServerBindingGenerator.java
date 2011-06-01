@@ -7,7 +7,6 @@ package com.mbien.generator;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
 import com.mbien.opencl.net.annotation.Out;
-import com.mbien.opencl.net.remote.CLRemotePlatform.RemoteContextBinding;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -30,7 +29,8 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         super(base, pkage, name);
     }
 
-    void generate(Class<RemoteContextBinding> targetInterface) throws IOException {
+    @Override
+    void generateBindingFor(Class<?> targetInterface) throws IOException {
         List<Method> methods = sortMethods(targetInterface.getMethods());
         IndentingWriter out = newWriter();
         try{
@@ -119,7 +119,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
 
             boolean in = !isAnnotatedWith(p, parameterAnnotations, Out.class);
 
-            String type = parameter.getCanonicalName();
+            String type = getTypeName(parameter);
             if(Buffer.class.isAssignableFrom(parameter)) {
                 type = ByteBuffer.class.getSimpleName();
             }

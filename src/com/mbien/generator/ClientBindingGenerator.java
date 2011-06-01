@@ -24,7 +24,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         super(base, pkage, name);
     }
 
-    void generate(Class<?> targetInterface) throws IOException {
+    @Override
+    void generateBindingFor(Class<?> targetInterface) throws IOException {
         List<Method> methods = sortMethods(targetInterface.getMethods());
         IndentingWriter out = newWriter();
         try{
@@ -42,7 +43,6 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 "java.nio.channels.*",
                 "com.jogamp.common.nio.*",
                 "static com.jogamp.common.nio.NativeSizeBuffer.*",
-                "static com.jogamp.common.nio.Buffers.*",
                 "static com.mbien.opencl.net.util.NetBuffers.*");
 
         createClassHeader(out, pakage, imports, PUBLIC|ABSTRACT, name, null, targetInterface, CLRemoteBinding.class);

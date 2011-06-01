@@ -3,8 +3,7 @@
  */
 package com.mbien.generator;
 
-import com.mbien.opencl.net.remote.CLRemotePlatform;
-import com.mbien.opencl.net.remote.CLRemotePlatform.RemoteContextBinding;
+import com.mbien.generator.interfaces.RemoteContextBinding;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,8 +12,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static java.lang.reflect.Modifier.*;
@@ -23,48 +24,65 @@ import static java.lang.reflect.Modifier.*;
  *
  * @author Michael Bien
  */
-public class NetworkBindingGenerator {
+public abstract class NetworkBindingGenerator {
 
     protected final String base;
     protected final String pkage;
     protected final String name;
+    protected final Set<String> imports;
 
     protected NetworkBindingGenerator(String base, String pkage, String name) {
         this.base = base;
         this.pkage = pkage;
         this.name = name;
+        this.imports = new HashSet<String>();
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException, NoSuchMethodException {
 
-        Class<RemoteContextBinding> targetInterface = CLRemotePlatform.RemoteContextBinding.class;
         String base = "/home/mbien/NetBeansProjects/JOGAMP/jocl-net/gensrc/";
+        String clientPackage = "com/mbien/opencl/net/remote";
+        String serverPackage = "com/mbien/opencl/net";
 
-        String pkage = "com/mbien/opencl/net/remote";
-        String name = "CLAbstractRemoteContextBinding";
+        Class<?> targetInterface = RemoteContextBinding.class;
+        String name = "Context";
 
-        ClientBindingGenerator clientGen = new ClientBindingGenerator(base, pkage, name);
-        clientGen.generate(targetInterface);
+        ClientBindingGenerator clientGen = new ClientBindingGenerator(base, clientPackage, "CLAbstractRemote"+name+"Binding");
+        clientGen.generateBindingFor(targetInterface);
 
-        
-        name = "CLContextHandler";
-        pkage = "com/mbien/opencl/net";
-
-        ServerBindingGenerator serverGen = new ServerBindingGenerator(base, pkage, name);
-        serverGen.generate(targetInterface);
+        ServerBindingGenerator serverGen = new ServerBindingGenerator(base, serverPackage, "CL"+name+"Handler");
+        serverGen.generateBindingFor(targetInterface);
         
     }
 
+    abstract void generateBindingFor(Class<?> targetInterface) throws IOException;
+    
+
+    /**
+     * Complete class declaration header, including package, imports and even the opening bracket.
+     */
     protected void createClassHeader(IndentingWriter out, String pkage, List<?> imports, int modifier, String name, Class<?> extended, Class<?>... implemented) {
-        
+
+        this.imports.clear();
+
         out.println("/* generated, do not edit ["+new Date()+"] */");
-        out.println("package "+pkage.replace('/', '.')+";");
+        String packageString = pkage.replace('/', '.');
+        this.imports.add(packageString+".*");
+
+        out.println("package "+packageString+";");
         out.println();
         for (Object object : imports) {
+            String importString;
             if(object instanceof Class) {
-                out.println("import "+((Class)object).getCanonicalName()+";");
+                importString = ((Class)object).getCanonicalName();
             }else{
-                out.println("import "+object+";");
+                importString = object.toString();
+            }
+            out.println("import "+importString+";");
+
+            // add import to list for later type resolution
+            if(!importString.startsWith("static ")) {
+                this.imports.add(importString);
             }
         }
         out.println();
@@ -77,13 +95,13 @@ public class NetworkBindingGenerator {
             out.print(" class "+name);
         }
         if(extended != null) {
-            out.print(" extends "+extended.getCanonicalName());
+            out.print(" extends "+getTypeName(extended));
         }
         if(implemented.length > 0) {
             out.print(" implements");
             for (int i = 0; i < implemented.length; i++) {
                 Class<?> inter = implemented[i];
-                out.print(" "+inter.getCanonicalName());
+                out.print(" "+getTypeName(inter));
                 if(i < implemented.length-1) {
                     out.print(',');
                 }
@@ -106,12 +124,12 @@ public class NetworkBindingGenerator {
         }
         createDeclarationModifiers(out, modifiers);
         
-        out.print(" "+method.getReturnType().getName()+" "+method.getName()+"(");
+        out.print(" "+getTypeName(method.getReturnType())+" "+method.getName()+"(");
 
         Class<?>[] parameters = method.getParameterTypes();
         for (int p = 0; p < parameters.length; p++) {
             Class<?> param = parameters[p];
-            out.print(param.getCanonicalName()+" ");
+            out.print(getTypeName(param)+" ");
             if(names.length > p) {
                 out.print(names[p]);
             }else{
@@ -126,7 +144,7 @@ public class NetworkBindingGenerator {
             out.print(" throws");
             for (int i = 0; i < throwables.length; i++) {
                 Class<?> t = throwables[i];
-                out.print(" "+t.getName());
+                out.print(" "+getTypeName(t));
                 if(i < throwables.length-1) {
                     out.print(',');
                 }
@@ -179,6 +197,25 @@ public class NetworkBindingGenerator {
             }
         }
         return false;
+    }
+
+    protected String getTypeName(Class<?> type) {
+
+        // direct match
+        if(imports.contains(type.getCanonicalName())) {
+            return type.getSimpleName();
+        }
+
+        for (String imp : imports) {
+            if(imp.endsWith(".*")) {
+                Package p = type.getPackage();
+                if(p!=null && p.getName().equals(imp.substring(0, imp.length()-2))) {
+                    return type.getSimpleName();
+                }
+            }
+        }
+
+        return type.getCanonicalName();
     }
 
     protected IndentingWriter newWriter() throws IOException {
