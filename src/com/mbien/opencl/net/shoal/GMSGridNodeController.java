@@ -3,38 +3,31 @@
  */
 package com.mbien.opencl.net.shoal;
 
+import com.sun.enterprise.ee.cms.core.GroupHandle;
 import java.util.logging.Logger;
 import com.mbien.opencl.net.CLNetwork;
 import com.mbien.opencl.net.LocalNode;
 import com.mbien.opencl.net.remote.RemoteNode;
 import com.sun.enterprise.ee.cms.core.CallBack;
-import com.sun.enterprise.ee.cms.core.FailureNotificationSignal;
 import com.sun.enterprise.ee.cms.core.GMSConstants;
 import com.sun.enterprise.ee.cms.core.GMSException;
 import com.sun.enterprise.ee.cms.core.GMSFactory;
 import com.sun.enterprise.ee.cms.core.GroupManagementService;
 import com.sun.enterprise.ee.cms.core.GroupManagementService.MemberType;
-import com.sun.enterprise.ee.cms.core.JoinedAndReadyNotificationSignal;
-import com.sun.enterprise.ee.cms.core.MessageSignal;
 import com.sun.enterprise.ee.cms.core.Signal;
 import com.sun.enterprise.ee.cms.core.SignalAcquireException;
 import com.sun.enterprise.ee.cms.core.SignalReleaseException;
-import com.sun.enterprise.ee.cms.impl.client.FailureNotificationActionFactoryImpl;
-import com.sun.enterprise.ee.cms.impl.client.JoinedAndReadyNotificationActionFactoryImpl;
-import com.sun.enterprise.ee.cms.impl.client.MessageActionFactoryImpl;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 
 import static java.util.logging.Level.*;
 
@@ -50,11 +43,9 @@ public class GMSGridNodeController extends CLNetwork {
     private GroupManagementService gms;
     private LocalNode localNode;
 
-    private final List<RemoteNode> nodes;
     private final String group;
 
     public GMSGridNodeController(String group) {
-        this.nodes = new ArrayList<RemoteNode>();
         this.group = group;
     }
 
@@ -73,21 +64,16 @@ public class GMSGridNodeController extends CLNetwork {
 
 //            gms.addActionFactory(new JoinNotificationActionFactoryImpl(this));
 //            gms.addActionFactory(new JoinedAndReadyNotificationActionFactoryImpl(logging()));
-            gms.addActionFactory(new JoinedAndReadyNotificationActionFactoryImpl(onNodeJoin()));
-            gms.addActionFactory(new FailureNotificationActionFactoryImpl(onNodeQuit()));
+//            gms.addActionFactory(new JoinedAndReadyNotificationActionFactoryImpl(onNodeJoin()));
+//            gms.addActionFactory(new FailureNotificationActionFactoryImpl(onNodeQuit()));
 //            gms.addActionFactory(new FailureSuspectedActionFactoryImpl(logging()));
 //            gms.addActionFactory(new FailureNotificationActionFactoryImpl(logging()));
 //            gms.addActionFactory(new PlannedShutdownActionFactoryImpl(this));
-            gms.addActionFactory(new MessageActionFactoryImpl(ipReply()), "discovery");
+//            gms.addActionFactory(new MessageActionFactoryImpl(ipReply()), "discovery");
 
             LOGGER.info("Starting Node...\n");
             gms.join();
             gms.updateMemberDetails(localNode.name, IP_KEY, getIP4String());
-
-            List<String> members = gms.getGroupHandle().getAllCurrentMembers();
-            for (String member : members) {
-                addNode(member, (String)gms.getMemberDetails(member).get(IP_KEY));
-            }
 
             LOGGER.info("Node running\n");
         } catch (GMSException ex) {
@@ -103,71 +89,17 @@ public class GMSGridNodeController extends CLNetwork {
         LOGGER.info("done");
     }
 
-    private CallBack ipReply() {
-        return new SignalAdapter<MessageSignal>() {
-            @Override public void onMessage(MessageSignal msg) {
-                try {
-                    String addresses = getIP4String();
-
-                    gms.getGroupHandle().sendMessage(msg.getMemberToken(), addresses.getBytes());
-                } catch (GMSException ex) {
-                    LOGGER.log(SEVERE, "can not reply", ex);
-                }
-            }
-
-        };
-    }
-
-    private CallBack onNodeJoin() {
-        return new SignalAdapter<JoinedAndReadyNotificationSignal>() {
-            @Override public void onMessage(JoinedAndReadyNotificationSignal msg) {
-                String name = msg.getMemberToken();
-                addNode(name, (String)msg.getMemberDetails().get(IP_KEY));
-            }
-
-        };
-    }
-
-    private CallBack onNodeQuit() {
-        return new SignalAdapter<FailureNotificationSignal>() {
-            @Override public void onMessage(FailureNotificationSignal msg) {
-                String name = msg.getMemberToken();
-                removeNode(name);
-            }
-
-        };
-    }
-
-    private void addNode(String name, String ips) {
-
-        if(this.localNode.name.equals(name)) {
-            return;
-        }
+    private RemoteNode createNode(String name, String ips) {
 
         try {
             String[] parts = ips.split("|");
             System.out.println("ip string: "+ips);
             InetAddress address = InetAddress.getByName(ips);
             System.out.println("picking: "+address);
-            RemoteNode gridNode = new RemoteNode(localNode.group, name, address);
-            synchronized(nodes) {
-                nodes.add(gridNode);
-            }
+
+            return new RemoteNode(localNode.group, name, address);
         } catch (UnknownHostException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private void removeNode(String name) {
-
-        synchronized(nodes) {
-            Iterator<RemoteNode> iterator = nodes.iterator();
-            while(iterator.hasNext()) {
-                if(iterator.next().name.equals(name)) {
-                    iterator.remove();
-                    return;
-                }
-            }
+            throw new RuntimeException(ex);
         }
     }
 
@@ -181,6 +113,10 @@ public class GMSGridNodeController extends CLNetwork {
                 }
             }
         };
+    }
+
+    private GroupHandle getGroup() {
+        return gms.getGroupHandle();
     }
 
     private String getIP4String() {
@@ -229,9 +165,15 @@ public class GMSGridNodeController extends CLNetwork {
 
     @Override
     public List<RemoteNode> getRemoteNodes() {
-        synchronized(nodes){
-            return Collections.unmodifiableList(nodes);
+        List<String> members = getGroup().getAllCurrentMembers();
+        List<RemoteNode> nodes = new ArrayList<RemoteNode>(members.size());
+        for (String name : members) {
+            if(!getLocalNode().name.equals(name)) {
+                String ips = (String) gms.getMemberDetails(name).get(IP_KEY);
+                nodes.add(createNode(name, ips));
+            }
         }
+        return nodes;
     }
 
 

@@ -10,6 +10,9 @@ import com.mbien.opencl.net.remote.RemoteNode;
 import java.util.List;
 import org.junit.Test;
 
+import static java.lang.System.*;
+import static org.junit.Assert.*;
+
 /**
  *
  * @author Michael Bien
@@ -19,46 +22,85 @@ public class ClientTest {
     @Test
     public void serverInfoTest() throws InterruptedException {
 
-        CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("master");
+        out.println("server-info-test");
 
-//        Thread.sleep(5000);
+        CLNetwork network = CLNetwork.createNetwork("jocl-net");
+        network.startNode("server-info-test");
+
+        Thread.sleep(10000);
 
         List<RemoteNode> remoteNodes = network.getRemoteNodes();
+        out.println("network: "+remoteNodes);
 
-        System.out.println("grid: "+remoteNodes);
+        assertTrue(!remoteNodes.isEmpty());
 
         long time = System.currentTimeMillis();
         for (RemoteNode node : remoteNodes) {
 
-            System.out.println(node);
+            out.println(node);
 
             CLPlatform[] platforms = node.listPlatforms();
 //            CLPlatform[] platforms = CLPlatform.listCLPlatforms();
 
             for (CLPlatform platform : platforms) {
-                System.out.println("    "+platform);
+
+                assertNotNull(platform);
+
+                out.println("    "+platform);
 
                 CLDevice[] devices = platform.listCLDevices();
+                assertNotNull(devices);
+                assertTrue(devices.length > 0);
+
                 for (CLDevice device : devices) {
-                    System.out.println("        "+device);
+                    out.println("        "+device);
                 }
 
-                System.out.println("        create remote context...");
-                CLContext context = CLContext.create(platform);
-                System.out.println("        "+context.toString());
-                System.out.println("        contextID: "+context.ID);
-                CLDevice[] devices2 = context.getDevices();
-                for (CLDevice device : devices2) {
-                    System.out.println("        "+device+" (context)");
-                }
-                context.release();
             }
-
         }
-        System.out.println("time needed: "+(System.currentTimeMillis()-time));
 
+        out.println("time needed: "+(System.currentTimeMillis()-time));
 
         network.shutdownNode();
     }
+
+    @Test
+    public void remoteContextTest() throws InterruptedException {
+
+        out.println("remote-context-test");
+
+        CLNetwork network = CLNetwork.createNetwork("jocl-net");
+        network.startNode("remote-context-test");
+
+        Thread.sleep(10000);
+
+        List<CLPlatform> platforms = network.getPlatforms();
+        assertTrue(!platforms.isEmpty());
+
+        for (CLPlatform platform : platforms) {
+
+            out.println("create remote context on "+platform);
+            CLContext context = CLContext.create(platform);
+            assertNotNull(context);
+
+            try{
+                out.println("    "+context);
+
+                CLDevice[] devices = context.getDevices();
+                assertNotNull(context);
+                assertTrue(devices.length > 0);
+
+                for (CLDevice device : devices) {
+                    out.println("    "+device);
+                }
+
+            }finally{
+                context.release();
+            }
+        }
+
+        network.shutdownNode();
+    }
+
+
 }
