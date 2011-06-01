@@ -53,7 +53,8 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 "java.nio.channels.*",
                 "com.jogamp.common.nio.*",
                 "static com.jogamp.common.nio.NativeSizeBuffer.*",
-                "static com.jogamp.common.nio.Buffers.*"
+                "static com.jogamp.common.nio.Buffers.*",
+                "static com.mbien.opencl.net.util.NetBuffers.*"
                 );
 
         createClassHeader(out, pkage, imports, PUBLIC, name, CLHandler.class);

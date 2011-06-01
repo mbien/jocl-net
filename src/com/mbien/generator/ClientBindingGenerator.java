@@ -42,7 +42,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 "java.nio.channels.*",
                 "com.jogamp.common.nio.*",
                 "static com.jogamp.common.nio.NativeSizeBuffer.*",
-                "static com.jogamp.common.nio.Buffers.*");
+                "static com.jogamp.common.nio.Buffers.*",
+                "static com.mbien.opencl.net.util.NetBuffers.*");
 
         createClassHeader(out, pakage, imports, PUBLIC|ABSTRACT, name, null, targetInterface, CLRemoteBinding.class);
 

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.jogamp.common.nio.Buffers.*;
+import static com.mbien.opencl.net.util.NetBuffers.*;
 import static java.util.logging.Level.*;
 
 /**
