@@ -243,9 +243,12 @@ public class NetworkBindingGenerator {
         createMethodDeclaration(out, PUBLIC, true, method, new String[]{"channel", "methodID"}, IOException.class);
 
         createServerHandlerImplementation(out, methods);
-        out.unindent();
 
+        out.println();
         out.println("}");
+        
+        out.unindent();
+        out.println();
         out.println("}");
     }
 
@@ -268,10 +271,10 @@ public class NetworkBindingGenerator {
             createServerSwitchCase(out, m, method, delegate);
         }
         out.unindent();
-
-        out.unindent();
         out.println();
         out.println("}");
+        
+        out.unindent();
 
     }
 
@@ -280,8 +283,8 @@ public class NetworkBindingGenerator {
         Class<?>[] parameters = method.getParameterTypes();
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
 
-        out.indent();
         out.println("case "+m+": {"+" // "+method.getName());
+        out.indent();
 
         for (int p = 0; p < parameters.length; p++) {
 
@@ -401,6 +404,7 @@ public class NetworkBindingGenerator {
         out.println();
 
         out.println("break;");
+
         out.unindent();
         out.println();
         out.println("}");
