@@ -3,6 +3,7 @@
  */
 package com.mbien.generator;
 
+import com.jogamp.common.nio.NativeBuffer;
 import com.mbien.generator.interfaces.RemoteContextBinding;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -225,6 +227,22 @@ public abstract class NetworkBindingGenerator {
 //        file.createNewFile();
 
         return new IndentingWriter(new PrintWriter(file));
+    }
+
+    /*
+     * TODO this is a big hack but we will have to refactor gluegen to fix this
+     */
+    protected boolean isStructAccessor(Class<?> parameter) {
+        if(NativeBuffer.class.isAssignableFrom(parameter)) {
+            return false;
+        }
+        for (Method method : parameter.getMethods()) {
+            Class<?> ret = method.getReturnType();
+            if (method.getName().endsWith("getBuffer") && ret != null && ret.equals(ByteBuffer.class)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

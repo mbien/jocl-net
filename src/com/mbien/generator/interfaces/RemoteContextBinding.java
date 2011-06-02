@@ -28,10 +28,10 @@ public interface RemoteContextBinding extends CLContextBinding {
     public long clCreateContextFromType(@In NativeSizeBuffer properties, long device_type, CLErrorHandler pfn_notify, @Out IntBuffer errcode_ret);
 
     @Override
-    public int clGetSupportedImageFormats(long context, long flags, int image_type, int num_entries, CLImageFormatImpl image_formats, IntBuffer num_image_formats);
+    public int clGetSupportedImageFormats(long context, long flags, int image_type, int num_entries, @Out CLImageFormatImpl image_formats, @Out IntBuffer num_image_formats);
 
     @Override
-    public int clGetSupportedImageFormats(long context, long flags, int image_type, int num_entries, CLImageFormatImpl image_formats, int[] num_image_formats, int num_image_formats_offset);
+    public int clGetSupportedImageFormats(long context, long flags, int image_type, int num_entries, @Out CLImageFormatImpl image_formats, @Out int[] num_image_formats, int num_image_formats_offset);
 
     @Override
     public int clReleaseContext(long context);

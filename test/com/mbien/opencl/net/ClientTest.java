@@ -5,6 +5,7 @@ package com.mbien.opencl.net;
 
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
+import com.jogamp.opencl.CLImageFormat;
 import com.jogamp.opencl.CLPlatform;
 import com.mbien.opencl.net.remote.RemoteNode;
 import java.util.List;
@@ -86,8 +87,27 @@ public class ClientTest {
             try{
                 out.println("    "+context);
 
+                CLImageFormat[] formats = context.getSupportedImage2dFormats();
+                assertNotNull(formats);
+                assertTrue(formats.length > 0);
+
+                out.println("    #2dformats: "+formats.length);
+//                for (CLImageFormat format : formats) {
+//                    out.println("    "+format);
+//                }
+
+                formats = context.getSupportedImage3dFormats();
+                assertNotNull(formats);
+                assertTrue(formats.length > 0);
+
+                out.println("    #3dformats: "+formats.length);
+//                for (CLImageFormat format : formats) {
+//                    out.println("    "+format);
+//                }
+
+
                 CLDevice[] devices = context.getDevices();
-                assertNotNull(context);
+                assertNotNull(devices);
                 assertTrue(devices.length > 0);
 
                 for (CLDevice device : devices) {

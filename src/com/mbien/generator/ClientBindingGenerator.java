@@ -9,6 +9,8 @@ import com.mbien.opencl.net.remote.CLRemoteBinding;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.nio.Buffer;
+import java.nio.IntBuffer;
 import java.util.List;
 
 import static java.lang.reflect.Modifier.*;
@@ -37,7 +39,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
 
     private void createClientLayer(IndentingWriter out, String pakage, String name, Class<?> targetInterface, List<Method> methods) {
 
-        List<?> imports = asList(
+        List<?> importList = asList(
                 IOException.class,
                 "java.nio.*",
                 "java.nio.channels.*",
@@ -45,7 +47,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 "static com.jogamp.common.nio.NativeSizeBuffer.*",
                 "static com.mbien.opencl.net.util.NetBuffers.*");
 
-        createClassHeader(out, pakage, imports, PUBLIC|ABSTRACT, name, null, targetInterface, CLRemoteBinding.class);
+        createClassHeader(out, pakage, importList, PUBLIC|ABSTRACT, name, null, targetInterface, CLRemoteBinding.class);
 
         for (int i = 0; i < methods.size(); i++) {
             Method method = methods.get(i);
@@ -76,6 +78,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
 
+        // write parameters to buffer
         for (int p = 0; p < parameterTypes.length; p++) {
 
             Class<?> parameter = parameterTypes[p];
@@ -95,7 +98,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 }
             }else{
                 if(in) {
-                    if(parameter.equals(java.nio.IntBuffer.class)) {
+                    if(parameter.equals(IntBuffer.class)) {
                         out.println("    putInts(buffer, p"+p+");");
                     }else if(parameter.equals(NativeSizeBuffer.class)) {
                         out.println("    putBytes(buffer, p"+p+".getBuffer());");
@@ -105,14 +108,17 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 }else{
                     out.print("    int remaining"+p+" = ");
 
-                    if(parameter.equals(java.nio.IntBuffer.class)) {
+                    if(parameter.equals(IntBuffer.class)) {
                         out.println("p"+p+"==null?"+0+":p"+p+".remaining()*4;");
                         out.println("    buffer.putInt(remaining"+p+");");
                     }else if(parameter.equals(NativeSizeBuffer.class)) {
                         out.println("p"+p+"==null?"+0+":p"+p+".remaining()*elementSize();");
                         out.println("    buffer.putInt(remaining"+p+");");
-                    }else if(parameter.equals(java.nio.Buffer.class)) {
+                    }else if(parameter.equals(Buffer.class)) {
                         out.println("p"+p+"==null?"+0+":p"+p+".remaining();");
+                        out.println("    buffer.putInt(remaining"+p+");");
+                    }else if(isStructAccessor(parameter)) {
+                        out.println("p"+p+"==null?0"+":p"+p+".getBuffer().capacity();");
                         out.println("    buffer.putInt(remaining"+p+");");
                     }else{
                         out.println("0;    // ignore p"+p);
@@ -126,25 +132,32 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         out.println("    buffer.flip();");
         out.println("    channel.write(buffer);");
 
-        Class<?> returnType = method.getReturnType();
         out.println();
         out.println("    buffer.rewind();");
 
+        // read with @Out annotated parameters
         boolean read = false;
         for (int p = 0; p < parameterTypes.length; p++) {
             Class<?> parameter = parameterTypes[p];
-            boolean in = !isAnnotatedWith(p, parameterAnnotations, Out.class);
-            if(!in) {
+            boolean _out = isAnnotatedWith(p, parameterAnnotations, Out.class);
+            if(_out) {
                 read = true;
                 out.println("    if(remaining"+p+" > 0) {");
-                if(parameter.equals(java.nio.IntBuffer.class)) {
+                if(parameter.equals(IntBuffer.class)) {
                     out.println("        readBuffer(channel, p"+p+", buffer);");
+                    out.println("        p"+p+".rewind();");
                 }else if(parameter.equals(NativeSizeBuffer.class)) {
                     out.println("        channel.read(p"+p+".getBuffer());");
-                }else if(parameter.equals(java.nio.Buffer.class)) {
+                    out.println("        p"+p+".rewind();");
+                }else if(parameter.equals(Buffer.class)) {
                     out.println("        channel.read((ByteBuffer)p"+p+");");
+                    out.println("        p"+p+".rewind();");
+                }else if(isStructAccessor(parameter)) {
+                    out.println("        channel.read(p"+p+".getBuffer());");
+                    out.println("        p"+p+".getBuffer().rewind();");
+                }else{
+                    out.println("      /* ignore */ ");
                 }
-                out.println("        p"+p+".rewind();");
                 out.println("    }");
             }
         }
@@ -152,6 +165,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
             out.println("    buffer.rewind();");
         }
 
+        // read and return call result value
+        Class<?> returnType = method.getReturnType();
         if(returnType.isPrimitive()) {
             if(returnType.equals(Long.TYPE)) {
                 out.println("    buffer.limit(8);");

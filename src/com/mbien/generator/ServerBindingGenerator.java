@@ -46,7 +46,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
 
     private void createServerLayer(IndentingWriter out, String name, String pkage, List<Method> methods) throws SecurityException, NoSuchMethodException {
 
-        List<?> imports = asList(
+        List<?> importList = asList(
                 "com.jogamp.opencl.llb.CL",
                 IOException.class,
                 "java.nio.*",
@@ -57,7 +57,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 "static com.mbien.opencl.net.util.NetBuffers.*"
                 );
 
-        createClassHeader(out, pkage, imports, PUBLIC, name, CLHandler.class);
+        createClassHeader(out, pkage, importList, PUBLIC, name, CLHandler.class);
 
         //TODO remove
         out.println("    public "+name+"(CL cl) {");
@@ -144,10 +144,13 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
             }else{
                 out.println(type +" p"+p+" = null;");
                 String sizeParam = "size"+p;
+                
+                out.print("int "+sizeParam+" = ");
 
                 // check buffer size
-                if(Buffer.class.isAssignableFrom(parameter) || parameter.equals(NativeSizeBuffer.class)) {
-                    out.println("int "+sizeParam+" = readInt(channel, buffer);");
+                if(Buffer.class.isAssignableFrom(parameter) || parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter)) {
+
+                    out.println("readInt(channel, buffer);");
                     out.println("if("+sizeParam+" > 0) {");
                     out.print("    p"+p+" = ");
                     if(parameter.equals(java.nio.IntBuffer.class)) {
@@ -168,14 +171,19 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                     }else if(parameter.equals(Buffer.class)) {
                         out.println("newDirectByteBuffer("+sizeParam+");");
                         if(in) {
-                            out.println("    readBytes((ByteBuffer)channel, p"+p+");");
+                            out.println("    readBytes(channel, (ByteBuffer)p"+p+");");
+                        }
+                    }else if(isStructAccessor(parameter)) {
+                        out.println(getTypeName(parameter)+".create(newDirectByteBuffer("+sizeParam+"));");
+                        if(in) {
+                            out.println("    readBytes(channel, p"+p+".getBuffer());");
                         }
                     }else{
                         out.println("null;");
                     }
                     out.println("}");
                 }else{
-
+                    out.println("0; // unknown");
                 }
 
             }
@@ -198,17 +206,20 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         }
         out.println(");");
 
-        // write out parameters
+        // write @Out parameters
         for (int p = 0; p < parameters.length; p++) {
+            Class<?> parameter = parameters[p];
             boolean _out = isAnnotatedWith(p, parameterAnnotations, Out.class);
 
             if(_out) {
                 String sizeParam = "size"+p;
                 out.print("if("+sizeParam+" > 0) {");
-                if(parameters[p].equals(NativeSizeBuffer.class)) {
+                if(parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter)) {
                     out.print(" channel.write(p"+p+".getBuffer()); ");
-                }else{
+                }else if(Buffer.class.isAssignableFrom(parameter)) {
                     out.print(" channel.write(p"+p+"); ");
+                }else{
+                    out.print("/* unknown */");
                 }
                 out.println("}");
             }
