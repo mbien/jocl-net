@@ -4,10 +4,9 @@
 package com.mbien.opencl.net;
 
 import com.jogamp.common.nio.Buffers;
-import com.jogamp.opencl.llb.CL;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.ByteChannel;
 
 
 /**
@@ -18,10 +17,8 @@ public abstract class CLHandler {
 
     private final ByteBuffer bb;
     
-    protected final CL cl;
 
-    public CLHandler(CL cl) {
-        this.cl = cl;
+    public CLHandler() {
         this.bb = Buffers.newDirectByteBuffer(40000);
     }
 
@@ -30,7 +27,7 @@ public abstract class CLHandler {
         return bb;
     }
     
-    protected abstract void handle(SocketChannel channel, int methodID) throws IOException;
+    protected abstract void handle(ByteChannel channel, int methodID) throws IOException;
 
     
 }

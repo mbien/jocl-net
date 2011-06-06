@@ -4,16 +4,18 @@
 package com.mbien.generator;
 
 
+import com.jogamp.common.nio.Buffers;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
 import com.mbien.opencl.net.annotation.Out;
+import com.mbien.opencl.net.util.NetBuffers;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.ByteChannel;
 import java.util.List;
 
 import static java.lang.reflect.Modifier.*;
@@ -34,7 +36,29 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         List<Method> methods = sortMethods(targetInterface.getMethods());
         IndentingWriter out = newWriter();
         try{
-            createServerLayer(out, name, pkage, methods);
+
+            Class<?>[] interfaces = targetInterface.getInterfaces();
+            for (Class<?> interf : interfaces) {
+                if(interf.getMethods().length == methods.size()) {
+
+                    List<Method> methods2 = sortMethods(interf.getMethods());
+                    boolean matching = true;
+                    for (int i = 0; i < methods.size(); i++) {
+                        Method method1 = methods.get(i);
+                        Method method2 = methods2.get(i);
+                        if(!method1.getName().equals(method2.getName())) {
+                            matching = false;
+                            break;
+                        }
+                    }
+                    if(matching) {
+                        targetInterface = interf;
+                        break;
+                    }
+                }
+            }
+
+            createServerLayer(out, name, pkage, targetInterface, methods);
         } catch (SecurityException ex) {
             throw new RuntimeException(ex);
         } catch (NoSuchMethodException ex) {
@@ -44,29 +68,32 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         }
     }
 
-    private void createServerLayer(IndentingWriter out, String name, String pkage, List<Method> methods) throws SecurityException, NoSuchMethodException {
+    private void createServerLayer(IndentingWriter out, String name, String pkage, Class target, List<Method> methods) throws SecurityException, NoSuchMethodException {
 
         List<?> importList = asList(
-                "com.jogamp.opencl.llb.CL",
+                target,
                 IOException.class,
                 "java.nio.*",
                 "java.nio.channels.*",
                 "com.jogamp.common.nio.*",
-                "static com.jogamp.common.nio.NativeSizeBuffer.*",
-                "static com.jogamp.common.nio.Buffers.*",
-                "static com.mbien.opencl.net.util.NetBuffers.*"
+                "static "+NativeSizeBuffer.class.getCanonicalName()+".*",
+                "static "+Buffers.class.getCanonicalName()+".*",
+                "static "+NetBuffers.class.getCanonicalName()+".*"
                 );
 
+        
         createClassHeader(out, pkage, importList, PUBLIC, name, CLHandler.class);
-
-        //TODO remove
-        out.println("    public "+name+"(CL cl) {");
-        out.println("        super(cl);");
-        out.println("    }");
 
         out.indent();
 
-        Method method = CLHandler.class.getDeclaredMethod("handle", SocketChannel.class, Integer.TYPE);
+        out.println();
+        out.println("private final "+target.getSimpleName()+" impl;");
+        out.println();
+        out.println("public "+name+"("+target.getSimpleName()+" impl) {");
+        out.println("    this.impl = impl;");
+        out.println("}");
+
+        Method method = CLHandler.class.getDeclaredMethod("handle", ByteChannel.class, Integer.TYPE);
         createMethodDeclaration(out, PUBLIC, true, method, new String[]{"channel", "methodID"}, IOException.class);
 
         createServerHandlerImplementation(out, methods);
@@ -87,7 +114,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         out.println("ByteBuffer buffer = getBuffer();");
         out.println();
 
-        String delegate = "cl";
+        String delegate = "impl";
 
         out.println("switch(methodID) {");
         out.indent();
@@ -193,7 +220,11 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         // method call
         Class<?> returnType = method.getReturnType();
 
-        out.print(returnType.getSimpleName()+" ret = "+delegate+"."+method.getName()+"(");
+        if(!returnType.equals(void.class)) {
+            out.print(returnType.getSimpleName()+" ret = ");
+        }
+        out.print(delegate+"."+method.getName()+"(");
+        
         for (int p = 0; p < parameters.length; p++) {
             if(parameters[p].equals(IntBuffer.class)) {
                 out.print("p"+p+"==null?null:p"+p+".asIntBuffer()");
@@ -235,8 +266,10 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 out.println("writeDouble(channel, buffer, ret);");
             }else if(returnType.equals(Float.TYPE)) {
                 out.println("writeFloat(channel, buffer, ret);");
+            }else if(returnType.getCanonicalName().equals("void")) {
+                // nothing to do here
             }else{
-                throw new RuntimeException();
+                throw new RuntimeException("unexpected type: "+returnType);
             }
         }
         out.println();

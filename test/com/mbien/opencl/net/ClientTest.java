@@ -28,7 +28,7 @@ public class ClientTest {
         CLNetwork network = CLNetwork.createNetwork("jocl-net");
         network.startNode("server-info-test");
 
-        Thread.sleep(10000);
+        waitForNodes(network);
 
         List<RemoteNode> remoteNodes = network.getRemoteNodes();
         out.println("network: "+remoteNodes);
@@ -73,7 +73,7 @@ public class ClientTest {
         CLNetwork network = CLNetwork.createNetwork("jocl-net");
         network.startNode("remote-context-test");
 
-        Thread.sleep(10000);
+        waitForNodes(network);
 
         List<CLPlatform> platforms = network.getPlatforms();
         assertTrue(!platforms.isEmpty());
@@ -120,6 +120,12 @@ public class ClientTest {
         }
 
         network.shutdownNode();
+    }
+
+    private void waitForNodes(CLNetwork network) throws InterruptedException {
+        while(network.getRemoteNodes().isEmpty()) {
+            Thread.sleep(1000);
+        }
     }
 
 

@@ -6,7 +6,6 @@ package com.mbien.generator;
 import com.jogamp.common.nio.NativeBuffer;
 import com.mbien.generator.interfaces.RemoteContextBinding;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
@@ -40,21 +39,25 @@ public abstract class NetworkBindingGenerator {
         this.imports = new HashSet<String>();
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException, NoSuchMethodException {
+    public static void main(String[] args) throws IOException {
 
         String base = "/home/mbien/NetBeansProjects/JOGAMP/jocl-net/gensrc/";
         String clientPackage = "com/mbien/opencl/net/remote";
         String serverPackage = "com/mbien/opencl/net";
 
-        Class<?> targetInterface = RemoteContextBinding.class;
-        String name = "Context";
+        generateBinding((byte)3, "Context", RemoteContextBinding.class, base, clientPackage, serverPackage);
+//        generateBinding((byte)4, "Program", RemoteProgramBinding.class, base, clientPackage, serverPackage);
+        
+    }
 
-        ClientBindingGenerator clientGen = new ClientBindingGenerator(base, clientPackage, "CLAbstractRemote"+name+"Binding");
+    public static void generateBinding(byte id, String name, Class<?> targetInterface, String base, String clientPackage, String serverPackage) throws IOException {
+        System.out.println("generating "+name+" binding");
+
+        ClientBindingGenerator clientGen = new ClientBindingGenerator(base, clientPackage, "CLAbstractRemote"+name+"Binding", id);
         clientGen.generateBindingFor(targetInterface);
 
         ServerBindingGenerator serverGen = new ServerBindingGenerator(base, serverPackage, "CL"+name+"Handler");
         serverGen.generateBindingFor(targetInterface);
-        
     }
 
     abstract void generateBindingFor(Class<?> targetInterface) throws IOException;
@@ -208,11 +211,22 @@ public abstract class NetworkBindingGenerator {
             return type.getSimpleName();
         }
 
-        for (String imp : imports) {
-            if(imp.endsWith(".*")) {
-                Package p = type.getPackage();
-                if(p!=null && p.getName().equals(imp.substring(0, imp.length()-2))) {
-                    return type.getSimpleName();
+        Package p = type.getPackage();
+
+        if(p != null) {
+            String packageName = p.getName();
+
+            // default imports
+            if(packageName.equals("java.lang")) {
+                return type.getSimpleName();
+            }
+
+            // custom imports
+            for (String imp : imports) {
+                if(imp.endsWith(".*")) {
+                    if(packageName.equals(imp.substring(0, imp.length()-2))) {
+                        return type.getSimpleName();
+                    }
                 }
             }
         }

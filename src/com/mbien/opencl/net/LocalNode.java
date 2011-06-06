@@ -13,6 +13,7 @@ import com.mbien.opencl.net.remote.RemoteNode;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
@@ -72,7 +73,7 @@ public class LocalNode extends GridNode {
                 }
 
             } catch (Exception ex) {
-                LOGGER.log(SEVERE, "exception in server loop", ex);
+                LOGGER.log(SEVERE, "exception in server loop ["+channel+"]", ex);
             } finally {
                 if (channel != null) {
                     try {
@@ -111,6 +112,7 @@ public class LocalNode extends GridNode {
         insertHandler(RemoteNode.PLATFORM_AID, new CLPlatformHandler(platformMap));
         insertHandler(RemoteNode.DEVICE_AID, new CLDeviceHandler(deviceMap));
         insertHandler(3, new CLContextHandler(CLPlatform.getLowLevelCLInterface()));
+//        insertHandler(4, new CLProgramHandler(CLPlatform.getLowLevelCLInterface()));
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {
@@ -118,12 +120,11 @@ public class LocalNode extends GridNode {
         final CLPlatform[] platforms;
 
         public CLStaticPlatformHandler(CLPlatform[] platforms) {
-            super(null);
             this.platforms = platforms;
         }
 
         @Override
-        public void handle(SocketChannel channel, int methodID) throws IOException {
+        public void handle(ByteChannel channel, int methodID) throws IOException {
             ByteBuffer buffer = null;
             switch (methodID) {
                 case RemoteNode.PLATFORM_IDS:
@@ -148,12 +149,11 @@ public class LocalNode extends GridNode {
         final Map<Long, CLPlatform> platformMap;
 
         public CLPlatformHandler(Map<Long, CLPlatform> platformMap) {
-            super(null);
             this.platformMap = platformMap;
         }
 
         @Override
-        public void handle(SocketChannel channel, int methodID) throws IOException {
+        public void handle(ByteChannel channel, int methodID) throws IOException {
 
             ByteBuffer buffer = newDirectByteBuffer(SIZEOF_LONG);
 
@@ -207,12 +207,11 @@ public class LocalNode extends GridNode {
         private final Map<Long, CLDevice> deviceMap;
 
         public CLDeviceHandler(Map<Long, CLDevice> deviceMap) {
-            super(null);
             this.deviceMap = deviceMap;
         }
 
         @Override
-        public void handle(SocketChannel channel, int methodID) throws IOException {
+        public void handle(ByteChannel channel, int methodID) throws IOException {
 
             ByteBuffer buffer = newDirectByteBuffer(SIZEOF_LONG);
 

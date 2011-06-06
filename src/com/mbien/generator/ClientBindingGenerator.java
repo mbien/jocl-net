@@ -3,9 +3,11 @@
  */
 package com.mbien.generator;
 
+import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.annotation.Out;
 import com.mbien.opencl.net.remote.CLRemoteBinding;
+import com.mbien.opencl.net.util.NetBuffers;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -22,8 +24,11 @@ import static java.util.Arrays.*;
  */
 public class ClientBindingGenerator extends NetworkBindingGenerator {
 
-    ClientBindingGenerator(String base, String pkage, String name) {
+    private final byte BINDING_ID;
+
+    ClientBindingGenerator(String base, String pkage, String name, byte id) {
         super(base, pkage, name);
+        this.BINDING_ID = id;
     }
 
     @Override
@@ -44,8 +49,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 "java.nio.*",
                 "java.nio.channels.*",
                 "com.jogamp.common.nio.*",
-                "static com.jogamp.common.nio.NativeSizeBuffer.*",
-                "static com.mbien.opencl.net.util.NetBuffers.*");
+                "static "+NativeSizeBuffer.class.getCanonicalName()+".*",
+                "static "+NetBuffers.class.getCanonicalName()+".*");
 
         createClassHeader(out, pakage, importList, PUBLIC|ABSTRACT, name, null, targetInterface, CLRemoteBinding.class);
 
@@ -68,7 +73,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         out.println();
 
         out.println("ByteBuffer buffer = getBuffer();");
-        out.println("buffer.put((byte)3);");
+        out.println("buffer.put((byte)"+BINDING_ID+");");
         out.println("buffer.putInt("+id+");");
         out.println();
 
@@ -100,8 +105,10 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 if(in) {
                     if(parameter.equals(IntBuffer.class)) {
                         out.println("    putInts(buffer, p"+p+");");
-                    }else if(parameter.equals(NativeSizeBuffer.class)) {
+                    }else if(NativeBuffer.class.isAssignableFrom(parameter)) {
                         out.println("    putBytes(buffer, p"+p+".getBuffer());");
+                    }else if(parameter.equals(String.class)) {
+                        out.println("    putString(buffer, p"+p+");");
                     }else{
                         out.println("    // ignore p"+p);
                     }
@@ -146,7 +153,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 if(parameter.equals(IntBuffer.class)) {
                     out.println("        readBuffer(channel, p"+p+", buffer);");
                     out.println("        p"+p+".rewind();");
-                }else if(parameter.equals(NativeSizeBuffer.class)) {
+                }else if(NativeBuffer.class.isAssignableFrom(parameter)) {
                     out.println("        channel.read(p"+p+".getBuffer());");
                     out.println("        p"+p+".rewind();");
                 }else if(parameter.equals(Buffer.class)) {
@@ -168,24 +175,26 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         // read and return call result value
         Class<?> returnType = method.getReturnType();
         if(returnType.isPrimitive()) {
-            if(returnType.equals(Long.TYPE)) {
+            if(returnType.equals(long.class)) {
                 out.println("    buffer.limit(8);");
                 out.println("    channel.read(buffer);");
                 out.println("    return buffer.getLong(0);");
-            }else if(returnType.equals(Integer.TYPE)) {
+            }else if(returnType.equals(int.class)) {
                 out.println("    buffer.limit(4);");
                 out.println("    channel.read(buffer);");
                 out.println("    return buffer.getInt(0);");
-            }else if(returnType.equals(Double.TYPE)) {
+            }else if(returnType.equals(double.class)) {
                 out.println("    buffer.limit(8);");
                 out.println("    channel.read(buffer);");
                 out.println("    return buffer.getDouble(0);");
-            }else if(returnType.equals(Float.TYPE)) {
+            }else if(returnType.equals(float.class)) {
                 out.println("    buffer.limit(4);");
                 out.println("    channel.read(buffer);");
                 out.println("    return buffer.getFloat(0);");
+            }else if(returnType.equals(void.class)) {
+                // nothing to do
             }else{
-                throw new RuntimeException();
+                throw new UnsupportedOperationException("unexpected type: "+returnType.getCanonicalName());
             }
         }else{
             out.println("    return null;");
