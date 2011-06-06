@@ -6,6 +6,7 @@ package com.mbien.opencl.net.util;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -55,6 +56,19 @@ public class NetBuffers {
         }
     }
 
+    public static String readString(ReadableByteChannel channel, int length) throws IOException {
+        if(length < 0) {
+            return null;
+        }else if(length == 0) {
+            return "";
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(length).order(ByteOrder.nativeOrder());
+        channel.read(buffer);
+        buffer.rewind();
+        return new String(buffer.array());
+    }
+
     public static void writeInt(WritableByteChannel channel, ByteBuffer temp, int value) throws IOException {
         temp.limit(SIZEOF_INT);
         temp.putInt(0, value);
@@ -72,7 +86,6 @@ public class NetBuffers {
     }
 
     public static void putBytes(ByteBuffer dest, ByteBuffer source) {
-
         if(source == null) {
             dest.putInt(0);
         }else{
@@ -87,7 +100,6 @@ public class NetBuffers {
     }
 
     public static void putInts(ByteBuffer dest, IntBuffer source) {
-
         if(source == null) {
             dest.putInt(0);
         }else{
@@ -97,6 +109,18 @@ public class NetBuffers {
             for (int i = 0; i < source.remaining(); i++) {
                 dest.putInt(source.get(sourcepos + i));
             }
+        }
+    }
+
+    public static void putString(ByteBuffer dest, String string) {
+        if(string == null) {
+            dest.putInt(-1);
+        }else if(string.length() == 0) {
+            dest.putInt(0);
+        }else{
+            byte[] bytes = string.getBytes();
+            dest.putInt(bytes.length);
+            dest.put(bytes);
         }
     }
 

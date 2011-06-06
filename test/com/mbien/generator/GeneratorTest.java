@@ -5,10 +5,12 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
+import com.mbien.opencl.net.util.NetBuffers;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
@@ -37,6 +39,8 @@ import static com.jogamp.common.nio.NativeSizeBuffer.*;
  * @author Michael Bien
  */
 public class GeneratorTest {
+
+    private static final Random rnd = new Random();
 
     private static byte id;
 
@@ -110,18 +114,16 @@ public class GeneratorTest {
         out.println("generator-client-test");
         out.println("native size_t is: "+elementSize());
 
-        Constructor<?> clientConstructor = Class.forName(clientPackage.replace('/', '.')+"."+clientImplName)
-                                                .getConstructor(ByteChannel.class, ByteBuffer.class);
+        final int          HEADER = SIZEOF_BYTE+SIZEOF_INT;
 
-        Random rnd = new Random();
         final long             p0 = rnd.nextLong();
         final int              p1 = rnd.nextInt();
         final NativeSizeBuffer p2 = allocateDirect(new long[]{rnd.nextLong(),rnd.nextLong(),rnd.nextLong()});
         final IntBuffer        p3 = newDirectIntBuffer(new int[]{rnd.nextInt(),rnd.nextInt(),rnd.nextInt()});
         final IntBuffer        p4 = newDirectIntBuffer(4);
-        final int          expRet = rnd.nextInt();
+        final int            ret0 = rnd.nextInt();
 
-        ByteBuffer writeBuffer = newDirectByteBuffer(SIZEOF_BYTE+SIZEOF_INT
+        ByteBuffer writeBuffer = newDirectByteBuffer( HEADER
                                                     +SIZEOF_LONG+SIZEOF_INT
                                                     +SIZEOF_INT+p2.getBuffer().capacity()
                                                     +SIZEOF_INT+p3.capacity()*SIZEOF_INT
@@ -133,21 +135,25 @@ public class GeneratorTest {
         readBuffer.putInt(rnd.nextInt());
         readBuffer.putInt(rnd.nextInt());
 
-        readBuffer.putLong(expRet); //return
+        readBuffer.putLong(ret0); //return
         readBuffer.rewind();
 
         DebugChannel channel = new DebugChannel(writeBuffer, readBuffer);
+        ByteBuffer clientBuffer = newDirectByteBuffer(writeBuffer.capacity());
+        Target client = createClientInterface(channel, clientBuffer);
 
-        Target client = (Target)clientConstructor.newInstance(channel, newDirectByteBuffer(writeBuffer.capacity()));
-
-        long ret = client.test1(p0, p1, p2, p3, p4);
-        assertEquals(expRet, ret);
+        // test 0
+        long ret = client.test0(p0, p1, p2, p3, p4);
+        assertEquals(ret0, ret);
         assertEquals(0, p4.position());
 
         writeBuffer.rewind();
 
+        // header
         assertEquals(id, writeBuffer.get());
         assertEquals(0,  writeBuffer.getInt());
+
+        // params
         assertEquals(p0, writeBuffer.getLong());
         assertEquals(p1, writeBuffer.getInt());
 
@@ -177,6 +183,46 @@ public class GeneratorTest {
             assertEquals(p4.get(), readBuffer.getInt());
         }
 
+
+        // test 1
+        clientBuffer.clear();
+        readBuffer.clear();
+        writeBuffer.clear();
+
+        client.test1();
+        assertEquals(0, readBuffer.position());
+        assertEquals(5, writeBuffer.position());
+        writeBuffer.rewind();
+
+        assertEquals(id, writeBuffer.get());
+        assertEquals(1,  writeBuffer.getInt());
+
+
+        // test 2
+        clientBuffer.clear();
+        readBuffer.clear();
+        writeBuffer.clear();
+
+        String string = "Hello World";
+        byte[] bytes = string.getBytes();
+
+        long ret3 = client.test2(-12, string, 52);
+        assertEquals(SIZEOF_LONG, readBuffer.position());
+        assertEquals(readBuffer.getLong(0), ret3);
+        assertEquals(HEADER+SIZEOF_INT+SIZEOF_INT+bytes.length+SIZEOF_INT, writeBuffer.position());
+        writeBuffer.rewind();
+
+        assertEquals(id, writeBuffer.get());
+        assertEquals(2, writeBuffer.getInt());
+
+        assertEquals(-12, writeBuffer.getInt());  // p0
+        assertEquals(bytes.length, writeBuffer.getInt()); // p1 size
+
+        for (int i = 0; i < bytes.length; i++) { // p1
+            assertEquals(bytes[i], writeBuffer.get());
+        }
+        assertEquals(52, writeBuffer.getInt()); // p2
+
     }
 
     @Test
@@ -184,39 +230,121 @@ public class GeneratorTest {
         
         out.println("generator-server-test");
 
-        Constructor<?> serverConstructor = Class.forName(serverPackage.replace('/', '.')+".CLFooBarHandler")
-                                                .getConstructor(Target.class);
+        final boolean[] called = new boolean[3];
+
+        final long             t0p0 = rnd.nextLong();
+        final int              t0p1 = rnd.nextInt();
+        final NativeSizeBuffer t0p2 = allocateDirect(new long[]{rnd.nextLong(),rnd.nextLong(),rnd.nextLong()});
+        final IntBuffer        t0p3 = newDirectIntBuffer(new int[]{rnd.nextInt(),rnd.nextInt(),rnd.nextInt()});
+        final int[]            t0p4 = new int[]{rnd.nextInt(),rnd.nextInt(),rnd.nextInt()};
+        final long             ret0 = rnd.nextLong();
+
+        final int       t2p0 = rnd.nextInt();
+        final String    t2p1 = "Hello World";
+        final int       t2p2 = rnd.nextInt();
+        final long      ret2 = rnd.nextLong();
 
         Target target = new Target() {
             
-            boolean test2Called = false;
-            
             @Override
-            public long test1(long longVal, int intVal, NativeSizeBuffer nativeSize, IntBuffer intIn, IntBuffer intOut) {
-                return 1;
-            }
-            
-            @Override
-            public void test2() {
-                if(test2Called) {
-                    fail("already called");
+            public long test0(long p0, int p1, NativeSizeBuffer p2, IntBuffer p3, IntBuffer out) {
+                assertEquals(t0p0, p0);
+                assertEquals(t0p1, p1);
+                assertEquals(t0p2.remaining(), p2.remaining());
+                for (int i = 0; i < t0p2.capacity(); i++) {
+                    assertEquals(t0p2.get(i), p2.get(i));
                 }
-                test2Called = true;
+                assertEquals(t0p3.remaining(), p3.remaining());
+                for (int i = 0; i < t0p3.capacity(); i++) {
+                    assertEquals(t0p3.get(i), p3.get(i));
+                }
+                assertEquals(t0p4.length, out.remaining());
+                for (int i = 0; i < t0p4.length; i++) {
+                    out.put(i, t0p4[i]);
+                }
+                called(0);
+                return ret0;
             }
             
-//            @Override
-//            public long test3(int a, String foo, int b) {
-//                return 2;
-//            }
+            @Override
+            public void test1() {
+                called(1);
+            }
+            
+            @Override
+            public long test2(int p0, String p1, int p2) {
+                assertEquals(t2p0, p0);
+                assertEquals(t2p1, p1);
+                assertEquals(t2p2, p2);
+                called(2);
+                return ret2;
+            }
+
+            private void called(int test) {
+                if(called[test]) fail(test + " already called");
+                called[test] = true;
+            }
 
         };
+        
+        CLHandler server = createServerHandler(target);
 
-        CLHandler server = (CLHandler) serverConstructor.newInstance(target);
+        ByteBuffer writeBuffer = newDirectByteBuffer(40000);
+        ByteBuffer readBuffer = newDirectByteBuffer(40000);
 
-        //todo
+        DebugChannel channel = new DebugChannel(writeBuffer, readBuffer);
+
+        // test 0
+        readBuffer.putLong(t0p0);
+        readBuffer.putInt(t0p1);
+        NetBuffers.putBytes(readBuffer, t0p2.getBuffer());
+        NetBuffers.putInts(readBuffer, t0p3);
+        readBuffer.putInt(t0p4.length*SIZEOF_INT); // out
+        readBuffer.rewind();
+        
+        server.handle(channel, 0);
+        assertTrue(called[0]);
+        writeBuffer.rewind();
+        for (int i = 0; i < t0p4.length; i++) {
+            assertEquals(t0p4[i], writeBuffer.getInt());
+        }
+        assertEquals(ret0, writeBuffer.getLong());
+
+
+        // test 1
+        writeBuffer.clear();
+        readBuffer.clear();
+        server.handle(channel, 1);
+        assertTrue(called[1]);
+
+
+        // test 2
+        writeBuffer.clear();
+        readBuffer.clear();
+        readBuffer.putInt(t2p0);
+        readBuffer.putInt(t2p1.length());
+        readBuffer.put(t2p1.getBytes());
+        readBuffer.putInt(t2p2);
+        readBuffer.rewind();
+
+        server.handle(channel, 2);
+        assertTrue(called[2]);
+        assertEquals(ret2, writeBuffer.getLong(0));
 
     }
 
+    private Target createClientInterface(DebugChannel channel, ByteBuffer clientBuffer) throws InvocationTargetException, SecurityException, IllegalAccessException, ClassNotFoundException, InstantiationException, NoSuchMethodException, IllegalArgumentException {
+        Constructor<?> clientConstructor = Class.forName(clientPackage.replace('/', '.')+"."+clientImplName)
+                            .getConstructor(ByteChannel.class, ByteBuffer.class);
+        return (Target)clientConstructor.newInstance(channel, clientBuffer);
+    }
+
+    private CLHandler createServerHandler(Target target) throws InvocationTargetException, IllegalArgumentException, IllegalAccessException, InstantiationException, ClassNotFoundException, SecurityException, NoSuchMethodException {
+        Constructor<?> serverConstructor = Class.forName(serverPackage.replace('/', '.')+".CLFooBarHandler")
+                                                .getConstructor(Target.class);
+        return (CLHandler)serverConstructor.newInstance(target);
+
+    }
 
     private static void compile(File[] files, String destination) throws IOException {
 

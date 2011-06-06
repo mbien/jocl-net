@@ -10,14 +10,14 @@ import java.nio.IntBuffer;
  */
 public interface Target {
 
-    public long test1(
+    public long test0(
         long longVal, int intVal,
         NativeSizeBuffer nativeSize,
         IntBuffer intIn, @Out IntBuffer intOut
     );
     
-    public void test2();
+    public void test1();
     
-//    public long test3(int a, String foo, int b);
+    public long test2(int a, String foo, int b);
 
 }

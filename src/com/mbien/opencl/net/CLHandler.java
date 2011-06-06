@@ -27,7 +27,7 @@ public abstract class CLHandler {
         return bb;
     }
     
-    protected abstract void handle(ByteChannel channel, int methodID) throws IOException;
+    public abstract void handle(ByteChannel channel, int methodID) throws IOException;
 
     
 }

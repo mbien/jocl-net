@@ -156,13 +156,13 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
 
                 out.print(type +" p"+p +" = ");
 
-                if(parameter.equals(Long.TYPE)) {
+                if(parameter.equals(long.class)) {
                     out.println("readLong(channel, buffer);");
-                }else if(parameter.equals(Integer.TYPE)) {
+                }else if(parameter.equals(int.class)) {
                     out.println("readInt(channel, buffer);");
-                }else if(parameter.equals(Double.TYPE)) {
+                }else if(parameter.equals(double.class)) {
                     out.println("readDouble(channel, buffer);");
-                }else if(parameter.equals(Float.TYPE)) {
+                }else if(parameter.equals(float.class)) {
                     out.println("readFloat(channel, buffer);");
                 }else{
                     throw new RuntimeException();
@@ -175,7 +175,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 out.print("int "+sizeParam+" = ");
 
                 // check buffer size
-                if(Buffer.class.isAssignableFrom(parameter) || parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter)) {
+                if(Buffer.class.isAssignableFrom(parameter) || parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter) || parameter.equals(String.class)) {
 
                     out.println("readInt(channel, buffer);");
                     out.println("if("+sizeParam+" > 0) {");
@@ -205,6 +205,8 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                         if(in) {
                             out.println("    readBytes(channel, p"+p+".getBuffer());");
                         }
+                    }else if(parameter.equals(String.class)) {
+                        out.println("readString(channel, "+sizeParam+");");
                     }else{
                         out.println("null;");
                     }
