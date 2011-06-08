@@ -7,6 +7,8 @@ import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLImageFormat;
 import com.jogamp.opencl.CLPlatform;
+import com.jogamp.opencl.CLProgram;
+import com.jogamp.opencl.util.CLMultiContext;
 import com.mbien.opencl.net.remote.RemoteNode;
 import java.util.List;
 import org.junit.Test;
@@ -19,6 +21,15 @@ import static org.junit.Assert.*;
  * @author Michael Bien
  */
 public class ClientTest {
+
+    private final static String programSource =
+      "kernel void compute(global int* array, int numElements) { \n"
+    + "    int index = get_global_id(0);                         \n"
+    + "    if (index >= numElements)  {                          \n"
+    + "        return;                                           \n"
+    + "    }                                                     \n"
+    + "    array[index]++;                                       \n"
+    + "}                                                         \n";
 
     @Test
     public void serverInfoTest() throws InterruptedException {
@@ -77,6 +88,7 @@ public class ClientTest {
 
         List<CLPlatform> platforms = network.getPlatforms();
         assertTrue(!platforms.isEmpty());
+//        for (int i = 0; i < 100; i++) {
 
         for (CLPlatform platform : platforms) {
 
@@ -118,8 +130,50 @@ public class ClientTest {
                 context.release();
             }
         }
+//        }
 
         network.shutdownNode();
+    }
+
+
+    @Test
+    public void remoteProgramTest() throws InterruptedException {
+
+        out.println("remote-program-test");
+
+        CLNetwork network = CLNetwork.createNetwork("jocl-net");
+        network.startNode("remote-program-test");
+
+        waitForNodes(network);
+        List<CLPlatform> platforms = network.getPlatforms();
+        CLMultiContext mc = CLMultiContext.create(platforms.toArray(new CLPlatform[platforms.size()]));
+
+        try{
+//            for (int i = 0; i < 100; i++) {
+
+            List<CLContext> contexts = mc.getContexts();
+            for (CLContext context : contexts) {
+                out.println(context);
+
+                CLProgram program = context.createProgram(programSource);
+                out.println(program);
+
+                assertFalse(program.isExecutable());
+                program.build();
+
+                assertTrue(program.isExecutable());
+
+                out.println(program.getBuildLog());
+
+                program.release();
+            }
+//            }
+        }finally{
+            mc.release();
+        }
+
+        network.shutdownNode();
+
     }
 
     private void waitForNodes(CLNetwork network) throws InterruptedException {

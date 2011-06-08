@@ -37,7 +37,7 @@ public class RemoteNode extends GridNode {
     }
 
     SocketChannel connect() throws IOException {
-        InetSocketAddress addr = new InetSocketAddress(address, 9000);
+        InetSocketAddress addr = new InetSocketAddress(address, 10000);
         return SocketChannel.open(addr);
     }
 

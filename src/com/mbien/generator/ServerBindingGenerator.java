@@ -68,6 +68,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         }
     }
 
+
     private void createServerLayer(IndentingWriter out, String name, String pkage, Class target, List<Method> methods) throws SecurityException, NoSuchMethodException {
 
         List<?> importList = asList(
@@ -151,71 +152,8 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 type = ByteBuffer.class.getSimpleName();
             }
 
+            createReadParameterSection(out, parameter, type, p, in);
 
-            if(parameter.isPrimitive()) {
-
-                out.print(type +" p"+p +" = ");
-
-                if(parameter.equals(long.class)) {
-                    out.println("readLong(channel, buffer);");
-                }else if(parameter.equals(int.class)) {
-                    out.println("readInt(channel, buffer);");
-                }else if(parameter.equals(double.class)) {
-                    out.println("readDouble(channel, buffer);");
-                }else if(parameter.equals(float.class)) {
-                    out.println("readFloat(channel, buffer);");
-                }else{
-                    throw new RuntimeException();
-                }
-
-            }else{
-                out.println(type +" p"+p+" = null;");
-                String sizeParam = "size"+p;
-                
-                out.print("int "+sizeParam+" = ");
-
-                // check buffer size
-                if(Buffer.class.isAssignableFrom(parameter) || parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter) || parameter.equals(String.class)) {
-
-                    out.println("readInt(channel, buffer);");
-                    out.println("if("+sizeParam+" > 0) {");
-                    out.print("    p"+p+" = ");
-                    if(parameter.equals(java.nio.IntBuffer.class)) {
-                        out.println("newDirectByteBuffer("+sizeParam+");");
-                        if(in) {
-                            out.println("    readInts(channel, p"+p+");");
-                        }
-                    }else if(parameter.equals(NativeSizeBuffer.class)) {
-                        out.println("allocateDirect("+sizeParam+"/elementSize());");
-                        if(in) {
-                            out.println("    readBytes(channel, p"+p+");");
-                        }
-                    }else if(parameter.equals(ByteBuffer.class)) {
-                        out.println("newDirectByteBuffer("+sizeParam+");");
-                        if(in) {
-                            out.println("    readBytes(channel, p"+p+");");
-                        }
-                    }else if(parameter.equals(Buffer.class)) {
-                        out.println("newDirectByteBuffer("+sizeParam+");");
-                        if(in) {
-                            out.println("    readBytes(channel, (ByteBuffer)p"+p+");");
-                        }
-                    }else if(isStructAccessor(parameter)) {
-                        out.println(getTypeName(parameter)+".create(newDirectByteBuffer("+sizeParam+"));");
-                        if(in) {
-                            out.println("    readBytes(channel, p"+p+".getBuffer());");
-                        }
-                    }else if(parameter.equals(String.class)) {
-                        out.println("readString(channel, "+sizeParam+");");
-                    }else{
-                        out.println("null;");
-                    }
-                    out.println("}");
-                }else{
-                    out.println("0; // unknown");
-                }
-
-            }
             out.println();
         }
 
@@ -243,6 +181,11 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         for (int p = 0; p < parameters.length; p++) {
             Class<?> parameter = parameters[p];
             boolean _out = isAnnotatedWith(p, parameterAnnotations, Out.class);
+
+            if(_out && parameter.isArray()) {
+                out.println("// ignoring array p"+p);
+                continue;
+            }
 
             if(_out) {
                 String sizeParam = "size"+p;
@@ -281,6 +224,91 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         out.unindent();
         out.println();
         out.println("}");
+    }
+    
+    private void createReadParameterSection(IndentingWriter out, Class parameter, String type, int p, boolean in) throws RuntimeException {
+
+        String parName = "p"+p;
+
+        if(parameter.isPrimitive()) {
+
+            out.print(type +" "+parName+" = ");
+
+            if(parameter.equals(long.class)) {
+                out.println("readLong(channel, buffer);");
+            }else if(parameter.equals(int.class)) {
+                out.println("readInt(channel, buffer);");
+            }else if(parameter.equals(double.class)) {
+                out.println("readDouble(channel, buffer);");
+            }else if(parameter.equals(float.class)) {
+                out.println("readFloat(channel, buffer);");
+            }else{
+                throw new RuntimeException();
+            }
+        }else if(parameter.isArray()) {
+            Class component = parameter.getComponentType();
+
+            String lenght = parName+"lenght";
+            out.println(type +" "+parName+" = null;");
+            out.println("int "+lenght+" = readInt(channel, buffer);");
+            out.println("if("+lenght+" > 0) {");
+
+            if(component.equals(String.class)) {
+                out.println("    "+parName+" = new "+getTypeName(component)+"["+lenght+"];");
+                out.println("    for(int i = 0; i < "+lenght+"; i++) {");
+                out.println("        "+parName+"[i] = readString(channel, readInt(channel, buffer));");
+                out.println("    }");
+            }
+            
+            out.println("}");
+        }else{
+            out.println(type +" "+parName+" = null;");
+            String sizeParam = "size"+p;
+
+            out.print("int "+sizeParam+" = ");
+
+            // check buffer size
+            if(Buffer.class.isAssignableFrom(parameter) || parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter) || parameter.equals(String.class)) {
+
+                out.println("readInt(channel, buffer);");
+                out.println("if("+sizeParam+" > 0) {");
+                out.print("    "+parName+" = ");
+                if(parameter.equals(java.nio.IntBuffer.class)) {
+                    out.println("newDirectByteBuffer("+sizeParam+");");
+                    if(in) {
+                        out.println("    readInts(channel, "+parName+");");
+                    }
+                }else if(parameter.equals(NativeSizeBuffer.class)) {
+                    out.println("allocateDirect("+sizeParam+"/elementSize());");
+                    if(in) {
+                        out.println("    readBytes(channel, "+parName+");");
+                    }
+                }else if(parameter.equals(ByteBuffer.class)) {
+                    out.println("newDirectByteBuffer("+sizeParam+");");
+                    if(in) {
+                        out.println("    readBytes(channel, "+parName+");");
+                    }
+                }else if(parameter.equals(Buffer.class)) {
+                    out.println("newDirectByteBuffer("+sizeParam+");");
+                    if(in) {
+                        out.println("    readBytes(channel, (ByteBuffer)"+parName+");");
+                    }
+                }else if(isStructAccessor(parameter)) {
+                    out.println(getTypeName(parameter)+".create(newDirectByteBuffer("+sizeParam+"));");
+                    if(in) {
+                        out.println("    readBytes(channel, "+parName+".getBuffer());");
+                    }
+                }else if(parameter.equals(String.class)) {
+                    out.println("readString(channel, "+sizeParam+");");
+                }else{
+                    out.println("null;");
+                }
+                out.println("}");
+            }else{
+                out.println("0; // unknown");
+            }
+
+        }
     }
 
 }

@@ -31,12 +31,12 @@ import static java.util.logging.Level.*;
 public class LocalNode extends GridNode {
 
     private static final Logger LOGGER = Logger.getLogger(LocalNode.class.getName());
-    private final InetSocketAddress listeningAddress = new InetSocketAddress(9000);
+    private final InetSocketAddress listeningAddress = new InetSocketAddress(10000);
     private CLHandler[] handlers;
 
     public LocalNode(String group, String name) {
         super(group, name, null);
-        handlers = new CLHandler[4];
+        handlers = new CLHandler[5];
     }
 
     public void startServer(CLPlatform[] platforms) {
@@ -112,7 +112,7 @@ public class LocalNode extends GridNode {
         insertHandler(RemoteNode.PLATFORM_AID, new CLPlatformHandler(platformMap));
         insertHandler(RemoteNode.DEVICE_AID, new CLDeviceHandler(deviceMap));
         insertHandler(3, new CLContextHandler(CLPlatform.getLowLevelCLInterface()));
-//        insertHandler(4, new CLProgramHandler(CLPlatform.getLowLevelCLInterface()));
+        insertHandler(4, new CLProgramHandler(CLPlatform.getLowLevelCLInterface()));
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {

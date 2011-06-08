@@ -5,6 +5,7 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeBuffer;
 import com.mbien.generator.interfaces.RemoteContextBinding;
+import com.mbien.generator.interfaces.RemoteProgramBinding;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -46,7 +47,7 @@ public abstract class NetworkBindingGenerator {
         String serverPackage = "com/mbien/opencl/net";
 
         generateBinding((byte)3, "Context", RemoteContextBinding.class, base, clientPackage, serverPackage);
-//        generateBinding((byte)4, "Program", RemoteProgramBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)4, "Program", RemoteProgramBinding.class, base, clientPackage, serverPackage);
         
     }
 

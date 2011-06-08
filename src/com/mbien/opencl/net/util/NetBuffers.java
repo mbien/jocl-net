@@ -3,7 +3,7 @@
  */
 package com.mbien.opencl.net.util;
 
-import com.jogamp.common.nio.NativeSizeBuffer;
+import com.jogamp.common.nio.NativeBuffer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -36,7 +36,7 @@ public class NetBuffers {
         return dest.getLong(0);
     }
 
-    public static void readBytes(ReadableByteChannel channel, NativeSizeBuffer dest) throws IOException {
+    public static void readBytes(ReadableByteChannel channel, NativeBuffer dest) throws IOException {
         ByteBuffer bb = dest.getBuffer();
         channel.read(bb);
         bb.clear();
@@ -83,6 +83,14 @@ public class NetBuffers {
         temp.rewind();
         channel.write(temp);
         temp.clear();
+    }
+
+    public static void putBytes(ByteBuffer dest, NativeBuffer source) {
+        if(source == null) {
+            putBytes(dest, (ByteBuffer)null);
+        }else{
+            putBytes(dest, source.getBuffer());
+        }
     }
 
     public static void putBytes(ByteBuffer dest, ByteBuffer source) {
