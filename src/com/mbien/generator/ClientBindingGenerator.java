@@ -7,6 +7,7 @@ import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.annotation.Out;
 import com.mbien.opencl.net.remote.CLRemoteBinding;
+import com.mbien.opencl.net.remote.RemoteNode;
 import com.mbien.opencl.net.util.NetBuffers;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -52,7 +53,15 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 "static "+NativeSizeBuffer.class.getCanonicalName()+".*",
                 "static "+NetBuffers.class.getCanonicalName()+".*");
 
-        createClassHeader(out, pakage, importList, PUBLIC|ABSTRACT, name, null, targetInterface, CLRemoteBinding.class);
+        createClassHeader(out, pakage, importList, PUBLIC, name, CLRemoteBinding.class, targetInterface);
+
+        out.indent();
+        out.println("public final static byte AID = "+BINDING_ID+";");
+        out.println();
+        out.println("public "+name+"("+RemoteNode.class.getCanonicalName()+" node) {");
+        out.println("    super(node);");
+        out.println("}");
+        out.unindent();
 
         for (int i = 0; i < methods.size(); i++) {
             Method method = methods.get(i);

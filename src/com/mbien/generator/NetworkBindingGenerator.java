@@ -44,7 +44,7 @@ public abstract class NetworkBindingGenerator {
 
         String base = "/home/mbien/NetBeansProjects/JOGAMP/jocl-net/gensrc/";
         String clientPackage = "com/mbien/opencl/net/remote";
-        String serverPackage = "com/mbien/opencl/net";
+        String serverPackage = "com/mbien/opencl/net/handler";
 
         generateBinding((byte)3, "Context", RemoteContextBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)4, "Program", RemoteProgramBinding.class, base, clientPackage, serverPackage);
@@ -54,7 +54,7 @@ public abstract class NetworkBindingGenerator {
     public static void generateBinding(byte id, String name, Class<?> targetInterface, String base, String clientPackage, String serverPackage) throws IOException {
         System.out.println("generating "+name+" binding");
 
-        ClientBindingGenerator clientGen = new ClientBindingGenerator(base, clientPackage, "CLAbstractRemote"+name+"Binding", id);
+        ClientBindingGenerator clientGen = new ClientBindingGenerator(base, clientPackage, "CLRemote"+name+"Binding", id);
         clientGen.generateBindingFor(targetInterface);
 
         ServerBindingGenerator serverGen = new ServerBindingGenerator(base, serverPackage, "CL"+name+"Handler");
