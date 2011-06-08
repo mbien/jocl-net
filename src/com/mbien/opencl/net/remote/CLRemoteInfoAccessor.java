@@ -7,6 +7,7 @@ import com.jogamp.opencl.spi.CLInfoAccessor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
@@ -41,10 +42,10 @@ public class CLRemoteInfoAccessor implements CLInfoAccessor {
     }
 
     protected SocketChannel writeHeader(ByteBuffer buffer) throws IOException {
-        SocketChannel channel = node.connect();
+        ByteChannel channel = node.connect();
         channel.write(buffer);
         buffer.rewind();
-        return channel;
+        return (SocketChannel) channel;
     }
 
     @Override
@@ -67,15 +68,14 @@ public class CLRemoteInfoAccessor implements CLInfoAccessor {
             return buffer.getLong();
 
         } catch (IOException ex) {
-            throw new RuntimeException("can not retrieve value", ex);
-        }finally{
             if(channel != null) {
                 try {
                     channel.close();
-                } catch (IOException ex) {
-                    LOGGER.log(SEVERE, "unable to close channel", ex);
+                } catch (IOException ex2) {
+                    LOGGER.log(SEVERE, "unable to close channel", ex2);
                 }
             }
+            throw new RuntimeException("can not retrieve value", ex);
         }
     }
 
@@ -95,21 +95,20 @@ public class CLRemoteInfoAccessor implements CLInfoAccessor {
             int length = buffer.getInt();
             ByteBuffer bytes = ByteBuffer.allocate(length).order(ByteOrder.nativeOrder());
             channel.read(bytes);
-            channel.close();
+
             buffer.rewind();
 
             return new String(bytes.array());
 
         } catch (IOException ex) {
-            throw new RuntimeException("can not retrieve value", ex);
-        }finally{
             if(channel != null) {
                 try {
                     channel.close();
-                } catch (IOException ex) {
-                    LOGGER.log(SEVERE, "unable to close channel", ex);
+                } catch (IOException ex2) {
+                    LOGGER.log(SEVERE, "unable to close channel", ex2);
                 }
             }
+            throw new RuntimeException("can not retrieve value", ex);
         }
 
     }

@@ -60,32 +60,41 @@ public class LocalNode extends GridNode {
 
         ByteBuffer buffer = newDirectByteBuffer(SIZEOF_BYTE + SIZEOF_INT);
 
+        SocketChannel channel = null;
         while (true) {
-            SocketChannel channel = null;
             try {
-                channel = server.accept();
-                channel.read(buffer);
-                buffer.rewind();
+                if(channel == null || !channel.isOpen()) {
+                    channel = server.accept();
+                }
+                
+                int bytesRead = channel.read(buffer);
 
-                byte accessorID = buffer.get();
-                int methodID = buffer.getInt();
-                buffer.rewind();
+                if(bytesRead < 0) {
+                    LOGGER.warning("client terminated connection.");
+                    channel.close();
+                }else{
+                    buffer.rewind();
 
-                if (accessorID >= 0 && accessorID < handlers.length) {
-                    CLHandler accessor = handlers[accessorID];
-                    accessor.handle(channel, methodID);
-                } else {
-                    LOGGER.warning("ignoring command: [" + accessorID + ", " + methodID + "]");
+                    byte accessorID = buffer.get();
+                    int methodID = buffer.getInt();
+                    buffer.rewind();
+
+                    if (accessorID >= 0 && accessorID < handlers.length) {
+                        CLHandler accessor = handlers[accessorID];
+                        accessor.handle(channel, methodID);
+                    } else {
+                        LOGGER.warning("ignoring command: [" + accessorID + ", " + methodID + "]");
+                    }
                 }
 
             } catch (Exception ex) {
                 LOGGER.log(SEVERE, "exception in server loop ["+channel+"]", ex);
-            } finally {
+                buffer.rewind();
                 if (channel != null) {
                     try {
                         channel.close();
-                    } catch (Exception ex) {
-                        LOGGER.log(WARNING, "can not close channel.", ex);
+                    } catch (Exception ex2) {
+                        LOGGER.log(WARNING, "can not close channel.", ex2);
                     }
                 }
             }

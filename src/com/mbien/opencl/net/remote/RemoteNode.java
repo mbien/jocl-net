@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
@@ -30,15 +31,31 @@ public class RemoteNode extends GridNode {
     public static final int PLATFORM_IDS = 1;
 
     private final CLRemoteAccessorFactory factory;
+    private final InetSocketAddress connectionAddress;
+
+    private SocketChannel sc;
 
     public RemoteNode(String group, String name, InetAddress address) {
         super(group, name, address);
+        this.connectionAddress = new InetSocketAddress(address, 10000);
         this.factory = new CLRemoteAccessorFactory(this);
     }
 
-    SocketChannel connect() throws IOException {
-        InetSocketAddress addr = new InetSocketAddress(address, 10000);
-        return SocketChannel.open(addr);
+    public ByteChannel connect() throws IOException {
+        if(sc == null || !sc.isConnected()) {
+            sc = SocketChannel.open(connectionAddress);
+        }
+        return sc;
+    }
+
+    public void disconnect() {
+        if(sc != null && sc.isConnected()) {
+            try {
+                sc.close();
+            } catch (IOException ex) {
+                LOGGER.log(WARNING, null, ex);
+            }
+        }
     }
 
     public CLPlatform[] listPlatforms() {
@@ -48,7 +65,7 @@ public class RemoteNode extends GridNode {
         ByteBuffer buffer = newDirectByteBuffer(SIZEOF_BYTE+SIZEOF_INT);
         buffer.put(SPECIAL_AID).putInt(PLATFORM_IDS).rewind();
 
-        SocketChannel channel = null;
+        ByteChannel channel = null;
         try {
 
             channel = connect();
@@ -70,14 +87,13 @@ public class RemoteNode extends GridNode {
                 long id = ids.getLong();
                 platforms[i] = new CLRemotePlatform(id, this, factory);
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             LOGGER.log(WARNING, "can not list remote platforms.", ex);
-        }finally{
             if(channel != null) {
                 try {
                     channel.close();
-                } catch (IOException ex) {
-                    LOGGER.log(WARNING, "exception on close", ex);
+                } catch (IOException ex2) {
+                    LOGGER.log(WARNING, "exception on close", ex2);
                 }
             }
         }

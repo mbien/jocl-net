@@ -301,7 +301,7 @@ public class GeneratorTest {
                             .getConstructor(RemoteNode.class);
         RemoteNode node = new RemoteNode(null, null, null) {
             @Override
-            protected ByteChannel getConnection() throws IOException {
+            public ByteChannel connect() throws IOException {
                 return channel;
             }
         };

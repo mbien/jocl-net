@@ -24,9 +24,11 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.logging.Level.*;
@@ -44,9 +46,11 @@ public class GMSGridNodeController extends CLNetwork {
     private LocalNode localNode;
 
     private final String group;
+    private final Map<String, RemoteNode> nodes;
 
     public GMSGridNodeController(String group) {
         this.group = group;
+        this.nodes = new HashMap<String, RemoteNode>();
     }
 
     @Override
@@ -85,6 +89,10 @@ public class GMSGridNodeController extends CLNetwork {
     @Override
     public void shutdownNode() {
         LOGGER.info("Shutting down");
+        for (RemoteNode node : nodes.values()) {
+            node.disconnect();
+        }
+        nodes.clear();
         gms.shutdown(GMSConstants.shutdownType.INSTANCE_SHUTDOWN);
         LOGGER.info("done");
     }
@@ -166,14 +174,20 @@ public class GMSGridNodeController extends CLNetwork {
     @Override
     public List<RemoteNode> getRemoteNodes() {
         List<String> members = getGroup().getAllCurrentMembers();
-        List<RemoteNode> nodes = new ArrayList<RemoteNode>(members.size());
+        List<RemoteNode> list = new ArrayList<RemoteNode>(members.size());
         for (String name : members) {
             if(!getLocalNode().name.equals(name)) {
-                String ips = (String) gms.getMemberDetails(name).get(IP_KEY);
-                nodes.add(createNode(name, ips));
+                if(this.nodes.containsKey(name)) {
+                    list.add(this.nodes.get(name));
+                }else{
+                    String ips = (String) gms.getMemberDetails(name).get(IP_KEY);
+                    RemoteNode node = createNode(name, ips);
+                    list.add(node);
+                    this.nodes.put(name, node);
+                }
             }
         }
-        return nodes;
+        return list;
     }
 
 

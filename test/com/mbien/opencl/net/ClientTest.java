@@ -37,7 +37,7 @@ public class ClientTest {
         out.println("server-info-test");
 
         CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("server-info-test");
+        network.startNode("test-node");
 
         waitForNodes(network);
 
@@ -82,7 +82,7 @@ public class ClientTest {
         out.println("remote-context-test");
 
         CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("remote-context-test");
+        network.startNode("test-node");
 
         waitForNodes(network);
 
@@ -142,7 +142,7 @@ public class ClientTest {
         out.println("remote-program-test");
 
         CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("remote-program-test");
+        network.startNode("test-node");
 
         waitForNodes(network);
         List<CLPlatform> platforms = network.getPlatforms();

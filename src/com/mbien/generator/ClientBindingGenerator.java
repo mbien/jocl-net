@@ -7,8 +7,6 @@ import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.annotation.Out;
 import com.mbien.opencl.net.remote.CLRemoteBinding;
-import com.mbien.opencl.net.remote.RemoteNode;
-import com.mbien.opencl.net.util.NetBuffers;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -51,14 +49,14 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 "java.nio.channels.*",
                 "com.jogamp.common.nio.*",
                 "static "+NativeSizeBuffer.class.getCanonicalName()+".*",
-                "static "+NetBuffers.class.getCanonicalName()+".*");
+                "static com.mbien.opencl.net.util.NetBuffers.*");
 
         createClassHeader(out, pakage, importList, PUBLIC, name, CLRemoteBinding.class, targetInterface);
 
         out.indent();
         out.println("public final static byte AID = "+BINDING_ID+";");
         out.println();
-        out.println("public "+name+"("+RemoteNode.class.getCanonicalName()+" node) {");
+        out.println("public "+name+"(com.mbien.opencl.net.remote.RemoteNode node) {");
         out.println("    super(node);");
         out.println("}");
         out.unindent();
@@ -176,10 +174,10 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         out.println();
 
         out.println("}catch(IOException ex) {");
+        out.println("    try{ if(channel != null) channel.close(); }catch(IOException ignore) { }");
         out.println("    throw new RuntimeException(ex);");
         out.println("}finally{");
         out.println("    buffer.rewind();");
-        out.println("    try{if(channel != null)channel.close();}catch(IOException ex){throw new RuntimeException(ex);}");
         out.println("}");
         out.unindent();
 

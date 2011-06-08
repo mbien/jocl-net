@@ -73,15 +73,14 @@ public class CLRemoteAccessorFactory implements CLAccessorFactory {
                 return ids;
 
             } catch (IOException ex) {
-                throw new RuntimeException("can not retrieve value", ex);
-            }finally{
                 if(channel != null) {
                     try {
                         channel.close();
-                    } catch (IOException ex) {
-                        LOGGER.log(SEVERE, "unable to close channel", ex);
+                    } catch (IOException ex2) {
+                        LOGGER.log(SEVERE, "unable to close channel", ex2);
                     }
                 }
+                throw new RuntimeException("can not retrieve value", ex);
             }
         }
 

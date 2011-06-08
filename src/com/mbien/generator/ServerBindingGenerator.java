@@ -8,7 +8,6 @@ import com.jogamp.common.nio.Buffers;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
 import com.mbien.opencl.net.annotation.Out;
-import com.mbien.opencl.net.util.NetBuffers;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -79,7 +78,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 "com.jogamp.common.nio.*",
                 "static "+NativeSizeBuffer.class.getCanonicalName()+".*",
                 "static "+Buffers.class.getCanonicalName()+".*",
-                "static "+NetBuffers.class.getCanonicalName()+".*"
+                "static com.mbien.opencl.net.util.NetBuffers.*"
                 );
 
         
