@@ -5,6 +5,7 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
+import com.mbien.opencl.net.remote.RemoteNode;
 import com.mbien.opencl.net.util.NetBuffers;
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +15,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -27,7 +27,6 @@ import javax.tools.ToolProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static java.lang.reflect.Modifier.*;
 import static junit.framework.Assert.*;
 import static java.lang.System.*;
 import static java.util.Arrays.*;
@@ -50,6 +49,7 @@ public class GeneratorTest {
     private static String clientPackage;
     private static String serverPackage;
     private static String clientImplName;
+    private static String serverImplName;
 
     @BeforeClass
     public static void generatorTest() throws Exception {
@@ -61,50 +61,16 @@ public class GeneratorTest {
         clientPackage = "com/mbien/test/net/client";
         serverPackage = "com/mbien/test/net/server";
         id = (byte)1;
-        clientImplName = "RemoteFooBarBinding";
+        clientImplName = "CLRemoteFooBarBinding";
+        serverImplName = "CLFooBarHandler";
 
         NetworkBindingGenerator.generateBinding(id, "FooBar", Target.class, gensrc, clientPackage, serverPackage);
 
         compile(new File[] {
             new File(project+"test/"+Target.class.getCanonicalName().replace('.', '/')+".java"),
-            new File(gensrc+clientPackage+"/CLAbstract"+clientImplName+".java"),
-            new File(gensrc+serverPackage+"/CLFooBarHandler.java"),
+            new File(gensrc+clientPackage+"/"+clientImplName+".java"),
+            new File(gensrc+serverPackage+"/"+serverImplName+".java"),
         }, dest);
-
-
-        // generate simple client impl
-        NetworkBindingGenerator gen = new NetworkBindingGenerator(gensrc, clientPackage, clientImplName) {
-
-            @Override
-            void generateBindingFor(Class<?> targetInterface) throws IOException {
-                IndentingWriter w = newWriter();
-                Class<?> generated;
-                try {
-                    String className = pkage.replace('/', '.')+".CLAbstract"+clientImplName;
-                    generated = Class.forName(className);
-                } catch (ClassNotFoundException ex) {
-                    throw new RuntimeException(ex);
-                }
-                createClassHeader(w, pkage, new ArrayList(), PUBLIC, name, generated);
-
-                w.println();
-                w.println("private final java.nio.channels.ByteChannel channel;");
-                w.println("private final java.nio.ByteBuffer buffer;");
-                w.println("public "+name+"(java.nio.channels.ByteChannel channel, java.nio.ByteBuffer buffer) {");
-                w.println("    this.buffer = buffer;");
-                w.println("    this.channel = channel;");
-                w.println("}");
-                w.println("public java.nio.ByteBuffer getBuffer() {return buffer;}");
-                w.println("public java.nio.channels.ByteChannel getChannel() {return channel;}");
-                w.println();
-
-                w.println("}");
-                w.close();
-            }
-        };
-        gen.generateBindingFor(null);
-
-        compile(new File[]{new File(gensrc+clientPackage+"/"+clientImplName+".java")}, dest);
 
     }
 
@@ -139,8 +105,7 @@ public class GeneratorTest {
         readBuffer.rewind();
 
         DebugChannel channel = new DebugChannel(writeBuffer, readBuffer);
-        ByteBuffer clientBuffer = newDirectByteBuffer(writeBuffer.capacity());
-        Target client = createClientInterface(channel, clientBuffer);
+        Target client = createClientInterface(channel);
 
         // test 0
         long ret = client.test0(p0, p1, p2, p3, p4);
@@ -185,7 +150,6 @@ public class GeneratorTest {
 
 
         // test 1
-        clientBuffer.clear();
         readBuffer.clear();
         writeBuffer.clear();
 
@@ -199,7 +163,6 @@ public class GeneratorTest {
 
 
         // test 2
-        clientBuffer.clear();
         readBuffer.clear();
         writeBuffer.clear();
 
@@ -333,14 +296,20 @@ public class GeneratorTest {
 
     }
 
-    private Target createClientInterface(DebugChannel channel, ByteBuffer clientBuffer) throws InvocationTargetException, SecurityException, IllegalAccessException, ClassNotFoundException, InstantiationException, NoSuchMethodException, IllegalArgumentException {
+    private Target createClientInterface(final DebugChannel channel) throws InvocationTargetException, SecurityException, IllegalAccessException, ClassNotFoundException, InstantiationException, NoSuchMethodException, IllegalArgumentException {
         Constructor<?> clientConstructor = Class.forName(clientPackage.replace('/', '.')+"."+clientImplName)
-                            .getConstructor(ByteChannel.class, ByteBuffer.class);
-        return (Target)clientConstructor.newInstance(channel, clientBuffer);
+                            .getConstructor(RemoteNode.class);
+        RemoteNode node = new RemoteNode(null, null, null) {
+            @Override
+            protected ByteChannel getConnection() throws IOException {
+                return channel;
+            }
+        };
+        return (Target)clientConstructor.newInstance(node);
     }
 
     private CLHandler createServerHandler(Target target) throws InvocationTargetException, IllegalArgumentException, IllegalAccessException, InstantiationException, ClassNotFoundException, SecurityException, NoSuchMethodException {
-        Constructor<?> serverConstructor = Class.forName(serverPackage.replace('/', '.')+".CLFooBarHandler")
+        Constructor<?> serverConstructor = Class.forName(serverPackage.replace('/', '.')+"."+serverImplName)
                                                 .getConstructor(Target.class);
         return (CLHandler)serverConstructor.newInstance(target);
 

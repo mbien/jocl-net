@@ -95,6 +95,7 @@
     <target name="-post-clean">
 
         <delete dir="${basedir}/gensrc"/>
+        <mkdir dir="${basedir}/gensrc"/>
 
     </target>
 
