@@ -3,6 +3,8 @@
  */
 package com.mbien.generator;
 
+import com.mbien.opencl.net.annotation.InOut;
+import com.mbien.opencl.net.annotation.Out;
 import com.jogamp.common.nio.NativeBuffer;
 import com.mbien.generator.interfaces.RemoteContextBinding;
 import com.mbien.generator.interfaces.RemoteProgramBinding;
@@ -203,6 +205,16 @@ public abstract class NetworkBindingGenerator {
             }
         }
         return false;
+    }
+
+    protected boolean isOutbound(int p, Annotation[][] parameterAnnotations) {
+        return isAnnotatedWith(p, parameterAnnotations, Out.class)
+            || isAnnotatedWith(p, parameterAnnotations, InOut.class);
+    }
+
+    protected boolean isInbound(int p, Annotation[][] parameterAnnotations) {
+        return !isAnnotatedWith(p, parameterAnnotations, Out.class)
+             || isAnnotatedWith(p, parameterAnnotations, InOut.class);
     }
 
     protected String getTypeName(Class<?> type) {

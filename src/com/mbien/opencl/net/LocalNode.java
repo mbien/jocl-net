@@ -31,7 +31,7 @@ import static com.mbien.opencl.net.util.NetBuffers.*;
 import static java.util.logging.Level.*;
 
 /**
- *
+ * A node running on the same JVM as the host application.
  * @author Michael Bien
  */
 public class LocalNode extends GridNode {
@@ -45,6 +45,9 @@ public class LocalNode extends GridNode {
         handlers = new CLHandler[5];
     }
 
+    /**
+     * Starts the server serving the given OpenCL platforms.
+     */
     public void startServer(CLPlatform[] platforms) {
 
         initializeHandlers(platforms);

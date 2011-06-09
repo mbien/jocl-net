@@ -9,7 +9,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- *
+ * Annotates a method parameter for being a reference pointing to mutable data
+ * which may be modified in the method call.
  * @author Michael Bien
  */
 @Retention(value = RetentionPolicy.RUNTIME)

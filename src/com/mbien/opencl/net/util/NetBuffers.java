@@ -14,7 +14,7 @@ import java.nio.channels.WritableByteChannel;
 import static com.jogamp.common.nio.Buffers.*;
 
 /**
- * Buffer utilities.
+ * Buffer utilities primary intended for buffer serialization.
  * @author Michael Bien
  */
 public class NetBuffers {

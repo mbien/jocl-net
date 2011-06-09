@@ -9,7 +9,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- *
+ * A parameter which has to be transfered into the method and may also be modified
+ * within the method.
  * @author Michael Bien
  */
 @Retention(value = RetentionPolicy.RUNTIME)

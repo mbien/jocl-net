@@ -7,7 +7,6 @@ package com.mbien.generator;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
-import com.mbien.opencl.net.annotation.Out;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -21,7 +20,7 @@ import static java.lang.reflect.Modifier.*;
 import static java.util.Arrays.*;
 
 /**
- *
+ * Generates the server side of the binding.
  * @author Michael Bien
  */
 public class ServerBindingGenerator extends NetworkBindingGenerator {
@@ -144,14 +143,13 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
 
             Class parameter = parameters[p];
 
-            boolean in = !isAnnotatedWith(p, parameterAnnotations, Out.class);
-
             String type = getTypeName(parameter);
             if(Buffer.class.isAssignableFrom(parameter)) {
                 type = ByteBuffer.class.getSimpleName();
             }
 
-            createReadParameterSection(out, parameter, type, p, in);
+            boolean inbound = isInbound(p, parameterAnnotations);
+            createReadParameterSection(out, parameter, type, p, inbound);
 
             out.println();
         }
@@ -179,14 +177,14 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         // write @Out parameters
         for (int p = 0; p < parameters.length; p++) {
             Class<?> parameter = parameters[p];
-            boolean _out = isAnnotatedWith(p, parameterAnnotations, Out.class);
+            boolean outbound = isOutbound(p, parameterAnnotations);
 
-            if(_out && parameter.isArray()) {
+            if(outbound && parameter.isArray()) {
                 out.println("// ignoring array p"+p);
                 continue;
             }
 
-            if(_out) {
+            if(outbound) {
                 String sizeParam = "size"+p;
                 out.print("if("+sizeParam+" > 0) {");
                 if(parameter.equals(NativeSizeBuffer.class) || isStructAccessor(parameter)) {

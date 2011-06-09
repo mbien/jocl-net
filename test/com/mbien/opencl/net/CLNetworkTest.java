@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
  *
  * @author Michael Bien
  */
-public class ClientTest {
+public class CLNetworkTest {
 
     private final static String programSource =
       "kernel void compute(global int* array, int numElements) { \n"

@@ -5,7 +5,6 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.common.nio.NativeSizeBuffer;
-import com.mbien.opencl.net.annotation.Out;
 import com.mbien.opencl.net.remote.CLRemoteBinding;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -18,7 +17,7 @@ import static java.lang.reflect.Modifier.*;
 import static java.util.Arrays.*;
 
 /**
- *
+ * Generates the client side of the binding.
  * @author Michael Bien
  */
 public class ClientBindingGenerator extends NetworkBindingGenerator {
@@ -96,8 +95,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         for (int p = 0; p < parameterTypes.length; p++) {
 
             Class<?> parameter = parameterTypes[p];
-            boolean in = !isAnnotatedWith(p, parameterAnnotations, Out.class);
-            createWriteParameterSection(out, "p"+p, parameter, p, in);
+            boolean inbound = isInbound(p, parameterAnnotations);
+            createWriteParameterSection(out, "p"+p, parameter, p, inbound);
 
         }
 
@@ -116,8 +115,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 out.println("  // ignore p"+p);
                 continue;
             }
-            boolean _out = isAnnotatedWith(p, parameterAnnotations, Out.class);
-            if(_out) {
+            boolean outbound = isOutbound(p, parameterAnnotations);
+            if(outbound) {
                 read = true;
                 out.println("if(remaining"+p+" > 0) {");
                 if(parameter.equals(IntBuffer.class)) {
