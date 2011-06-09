@@ -3,10 +3,12 @@
  */
 package com.mbien.opencl.net;
 
+import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLImageFormat;
 import com.jogamp.opencl.CLKernel;
+import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
 import com.jogamp.opencl.util.CLMultiContext;
@@ -177,6 +179,12 @@ public class CLNetworkTest {
                 }
 
                 program.release();
+
+                // buffer test
+                CLBuffer<?> buffer = context.createBuffer(64, Mem.READ_WRITE);
+                System.out.println(buffer +" size: "+buffer.getCLSize());
+                assertEquals(64, buffer.getCLSize());
+                buffer.release();
             }
 //            }
         }finally{

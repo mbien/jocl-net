@@ -25,8 +25,11 @@ import static java.util.Arrays.*;
  */
 public class ServerBindingGenerator extends NetworkBindingGenerator {
 
-    ServerBindingGenerator(String base, String pkage, String name) {
+    private final Class<?> implInterface;
+
+    ServerBindingGenerator(String base, String pkage, String name, Class<?> implInterface) {
         super(base, pkage, name);
+        this.implInterface = implInterface;
     }
 
     @Override
@@ -34,29 +37,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         List<Method> methods = sortMethods(targetInterface.getMethods());
         IndentingWriter out = newWriter();
         try{
-
-            Class<?>[] interfaces = targetInterface.getInterfaces();
-            for (Class<?> interf : interfaces) {
-                if(interf.getMethods().length == methods.size()) {
-
-                    List<Method> methods2 = sortMethods(interf.getMethods());
-                    boolean matching = true;
-                    for (int i = 0; i < methods.size(); i++) {
-                        Method method1 = methods.get(i);
-                        Method method2 = methods2.get(i);
-                        if(!method1.getName().equals(method2.getName())) {
-                            matching = false;
-                            break;
-                        }
-                    }
-                    if(matching) {
-                        targetInterface = interf;
-                        break;
-                    }
-                }
-            }
-
-            createServerLayer(out, name, pkage, targetInterface, methods);
+            createServerLayer(out, name, pkage, implInterface, methods);
         } catch (SecurityException ex) {
             throw new RuntimeException(ex);
         } catch (NoSuchMethodException ex) {
@@ -67,10 +48,10 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
     }
 
 
-    private void createServerLayer(IndentingWriter out, String name, String pkage, Class target, List<Method> methods) throws SecurityException, NoSuchMethodException {
+    private void createServerLayer(IndentingWriter out, String name, String pkage, Class impl, List<Method> methods) throws SecurityException, NoSuchMethodException {
 
         List<?> importList = asList(
-                target,
+                impl,
                 IOException.class,
                 "java.nio.*",
                 "java.nio.channels.*",
@@ -86,9 +67,9 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         out.indent();
 
         out.println();
-        out.println("private final "+target.getSimpleName()+" impl;");
+        out.println("private final "+impl.getSimpleName()+" impl;");
         out.println();
-        out.println("public "+name+"("+target.getSimpleName()+" impl) {");
+        out.println("public "+name+"("+impl.getSimpleName()+" impl) {");
         out.println("    this.impl = impl;");
         out.println("}");
 
@@ -179,11 +160,6 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
             Class<?> parameter = parameters[p];
             boolean outbound = isOutbound(p, parameterAnnotations);
 
-            if(outbound && parameter.isArray()) {
-                out.println("// ignoring array p"+p);
-                continue;
-            }
-
             if(outbound) {
                 String sizeParam = "size"+p;
                 out.print("if("+sizeParam+" > 0) {");
@@ -191,6 +167,8 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                     out.print(" channel.write(p"+p+".getBuffer()); ");
                 }else if(Buffer.class.isAssignableFrom(parameter)) {
                     out.print(" channel.write(p"+p+"); ");
+                }else if(parameter.isArray()) {
+                    out.print("writeArray(channel, buffer, p"+p+");");
                 }else{
                     out.print("/* unknown */");
                 }
@@ -230,30 +208,23 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         if(parameter.isPrimitive()) {
 
             out.print(type +" "+parName+" = ");
-
-            if(parameter.equals(long.class)) {
-                out.println("readLong(channel, buffer);");
-            }else if(parameter.equals(int.class)) {
-                out.println("readInt(channel, buffer);");
-            }else if(parameter.equals(double.class)) {
-                out.println("readDouble(channel, buffer);");
-            }else if(parameter.equals(float.class)) {
-                out.println("readFloat(channel, buffer);");
-            }else{
-                throw new RuntimeException();
-            }
+            createReadPrimitiveSection(out, parameter);
         }else if(parameter.isArray()) {
             Class component = parameter.getComponentType();
 
-            String lenght = parName+"lenght";
+            String lenght = "size"+p;
             out.println(type +" "+parName+" = null;");
             out.println("int "+lenght+" = readInt(channel, buffer);");
             out.println("if("+lenght+" > 0) {");
-
-            if(component.equals(String.class)) {
-                out.println("    "+parName+" = new "+getTypeName(component)+"["+lenght+"];");
+            out.println("    "+parName+" = new "+getTypeName(component)+"["+lenght+"];");
+            if(in) {
                 out.println("    for(int i = 0; i < "+lenght+"; i++) {");
-                out.println("        "+parName+"[i] = readString(channel, readInt(channel, buffer));");
+                out.print("        "+parName+"[i] = ");
+                if(component.equals(String.class)) {
+                    out.println("readString(channel, readInt(channel, buffer));");
+                }else if(component.isPrimitive()) {
+                    createReadPrimitiveSection(out, component);
+                }
                 out.println("    }");
             }
             
@@ -270,30 +241,20 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 out.println("readInt(channel, buffer);");
                 out.println("if("+sizeParam+" > 0) {");
                 out.print("    "+parName+" = ");
-                if(parameter.equals(java.nio.IntBuffer.class)) {
-                    out.println("newDirectByteBuffer("+sizeParam+");");
-                    if(in) {
-                        out.println("    readInts(channel, "+parName+");");
-                    }
-                }else if(parameter.equals(NativeSizeBuffer.class)) {
+                if(parameter.equals(NativeSizeBuffer.class)) {
                     out.println("allocateDirect("+sizeParam+"/elementSize());");
                     if(in) {
-                        out.println("    readBytes(channel, "+parName+");");
+                        out.println("    readBuffer(channel, "+parName+");");
                     }
-                }else if(parameter.equals(ByteBuffer.class)) {
+                }else if(Buffer.class.isAssignableFrom(parameter)) {
                     out.println("newDirectByteBuffer("+sizeParam+");");
                     if(in) {
-                        out.println("    readBytes(channel, "+parName+");");
-                    }
-                }else if(parameter.equals(Buffer.class)) {
-                    out.println("newDirectByteBuffer("+sizeParam+");");
-                    if(in) {
-                        out.println("    readBytes(channel, (ByteBuffer)"+parName+");");
+                        out.println("    readBuffer(channel, "+parName+");");
                     }
                 }else if(isStructAccessor(parameter)) {
                     out.println(getTypeName(parameter)+".create(newDirectByteBuffer("+sizeParam+"));");
                     if(in) {
-                        out.println("    readBytes(channel, "+parName+".getBuffer());");
+                        out.println("    readBuffer(channel, "+parName+".getBuffer());");
                     }
                 }else if(parameter.equals(String.class)) {
                     out.println("readString(channel, "+sizeParam+");");
@@ -305,6 +266,20 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
                 out.println("0; // unknown");
             }
 
+        }
+    }
+
+    private void createReadPrimitiveSection(IndentingWriter out, Class parameter) {
+        if(parameter.equals(long.class)) {
+            out.println("readLong(channel, buffer);");
+        }else if(parameter.equals(int.class)) {
+            out.println("readInt(channel, buffer);");
+        }else if(parameter.equals(double.class)) {
+            out.println("readDouble(channel, buffer);");
+        }else if(parameter.equals(float.class)) {
+            out.println("readFloat(channel, buffer);");
+        }else{
+            throw new RuntimeException();
         }
     }
 

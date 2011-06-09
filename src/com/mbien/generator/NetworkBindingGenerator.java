@@ -6,8 +6,13 @@ package com.mbien.generator;
 import com.mbien.opencl.net.annotation.InOut;
 import com.mbien.opencl.net.annotation.Out;
 import com.jogamp.common.nio.NativeBuffer;
+import com.jogamp.opencl.llb.CL;
+import com.jogamp.opencl.llb.CLContextBinding;
+import com.jogamp.opencl.llb.CLKernelBinding;
+import com.jogamp.opencl.llb.CLProgramBinding;
 import com.mbien.generator.interfaces.RemoteContextBinding;
 import com.mbien.generator.interfaces.RemoteKernelBinding;
+import com.mbien.generator.interfaces.RemoteMemoryBinding;
 import com.mbien.generator.interfaces.RemoteProgramBinding;
 import java.io.File;
 import java.io.IOException;
@@ -49,19 +54,20 @@ public abstract class NetworkBindingGenerator {
         String clientPackage = "com/mbien/opencl/net/remote";
         String serverPackage = "com/mbien/opencl/net/handler";
 
-        generateBinding((byte)3, "Context", RemoteContextBinding.class, base, clientPackage, serverPackage);
-        generateBinding((byte)4, "Program", RemoteProgramBinding.class, base, clientPackage, serverPackage);
-        generateBinding((byte)5, "Kernel", RemoteKernelBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)3, "Context", RemoteContextBinding.class, CLContextBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)4, "Program", RemoteProgramBinding.class, CLProgramBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)5, "Kernel", RemoteKernelBinding.class, CLKernelBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)6, "Memory", RemoteMemoryBinding.class, CL.class, base, clientPackage, serverPackage);
         
     }
 
-    public static void generateBinding(byte id, String name, Class<?> targetInterface, String base, String clientPackage, String serverPackage) throws IOException {
+    public static void generateBinding(byte id, String name, Class<?> targetInterface, Class<?> implInterface, String base, String clientPackage, String serverPackage) throws IOException {
         System.out.println("generating "+name+" binding");
 
         ClientBindingGenerator clientGen = new ClientBindingGenerator(base, clientPackage, "CLRemote"+name+"Binding", id);
         clientGen.generateBindingFor(targetInterface);
 
-        ServerBindingGenerator serverGen = new ServerBindingGenerator(base, serverPackage, "CL"+name+"Handler");
+        ServerBindingGenerator serverGen = new ServerBindingGenerator(base, serverPackage, "CL"+name+"Handler", implInterface);
         serverGen.generateBindingFor(targetInterface);
     }
 

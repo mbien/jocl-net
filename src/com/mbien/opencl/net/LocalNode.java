@@ -12,10 +12,12 @@ import com.jogamp.opencl.CLPlatform;
 import com.mbien.opencl.net.remote.CLRemoteAccessorFactory.CLRemotePlatformInfoAccessor;
 import com.mbien.opencl.net.handler.CLContextHandler;
 import com.mbien.opencl.net.handler.CLKernelHandler;
+import com.mbien.opencl.net.handler.CLMemoryHandler;
 import com.mbien.opencl.net.handler.CLProgramHandler;
 import com.mbien.opencl.net.remote.CLRemoteContextBinding;
 import com.mbien.opencl.net.remote.CLRemoteInfoAccessor;
 import com.mbien.opencl.net.remote.CLRemoteKernelBinding;
+import com.mbien.opencl.net.remote.CLRemoteMemoryBinding;
 import com.mbien.opencl.net.remote.CLRemoteProgramBinding;
 import com.mbien.opencl.net.remote.RemoteNode;
 
@@ -45,7 +47,7 @@ public class LocalNode extends GridNode {
 
     public LocalNode(String group, String name) {
         super(group, name, null);
-        handlers = new CLHandler[6];
+        handlers = new CLHandler[7];
     }
 
     /**
@@ -137,6 +139,7 @@ public class LocalNode extends GridNode {
         insertHandler(CLRemoteContextBinding.AID, new CLContextHandler(cl));
         insertHandler(CLRemoteProgramBinding.AID, new CLProgramHandler(cl));
         insertHandler(CLRemoteKernelBinding.AID, new CLKernelHandler(cl));
+        insertHandler(CLRemoteMemoryBinding.AID, new CLMemoryHandler(cl));
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {

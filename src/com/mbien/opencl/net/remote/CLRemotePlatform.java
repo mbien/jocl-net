@@ -5,8 +5,11 @@ package com.mbien.opencl.net.remote;
 
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLPlatform;
+import com.jogamp.opencl.llb.CLBufferBinding;
 import com.jogamp.opencl.llb.CLContextBinding;
+import com.jogamp.opencl.llb.CLImageBinding;
 import com.jogamp.opencl.llb.CLKernelBinding;
+import com.jogamp.opencl.llb.CLMemObjBinding;
 import com.jogamp.opencl.llb.CLProgramBinding;
 
 
@@ -19,6 +22,7 @@ public class CLRemotePlatform extends CLPlatform {
     private final CLRemoteContextBinding contextBinding;
     private final CLRemoteProgramBinding programBinding;
     private final CLRemoteKernelBinding kernelBinding;
+    private final CLRemoteMemoryBinding memoryBinding;
 
     private final RemoteNode node;
 
@@ -28,6 +32,7 @@ public class CLRemotePlatform extends CLPlatform {
         this.contextBinding = new CLRemoteContextBinding(node);
         this.programBinding = new CLRemoteProgramBinding(node);
         this.kernelBinding = new CLRemoteKernelBinding(node);
+        this.memoryBinding = new CLRemoteMemoryBinding(node);
     }
 
     @Override
@@ -48,6 +53,21 @@ public class CLRemotePlatform extends CLPlatform {
     @Override
     protected CLKernelBinding getKernelBinding() {
         return kernelBinding;
+    }
+
+    @Override
+    protected CLMemObjBinding getMemObjectBinding() {
+        return memoryBinding;
+    }
+
+    @Override
+    protected CLBufferBinding getBufferBinding() {
+        return memoryBinding;
+    }
+
+    @Override
+    protected CLImageBinding getImageBinding() {
+        return memoryBinding;
     }
 
 }

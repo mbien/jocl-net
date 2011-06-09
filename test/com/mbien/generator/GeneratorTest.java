@@ -64,7 +64,7 @@ public class GeneratorTest {
         clientImplName = "CLRemoteFooBarBinding";
         serverImplName = "CLFooBarHandler";
 
-        NetworkBindingGenerator.generateBinding(id, "FooBar", Target.class, gensrc, clientPackage, serverPackage);
+        NetworkBindingGenerator.generateBinding(id, "FooBar", Target.class, Target.class, gensrc, clientPackage, serverPackage);
 
         compile(new File[] {
             new File(project+"test/"+Target.class.getCanonicalName().replace('.', '/')+".java"),
@@ -260,8 +260,8 @@ public class GeneratorTest {
         // test 0
         readBuffer.putLong(t0p0);
         readBuffer.putInt(t0p1);
-        NetBuffers.putBytes(readBuffer, t0p2.getBuffer());
-        NetBuffers.putInts(readBuffer, t0p3);
+        NetBuffers.putBuffer(readBuffer, t0p2.getBuffer());
+        NetBuffers.putBuffer(readBuffer, t0p3);
         readBuffer.putInt(t0p4.length*SIZEOF_INT); // out
         readBuffer.rewind();
         

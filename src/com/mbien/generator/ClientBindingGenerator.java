@@ -102,7 +102,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
 
         out.println();
         out.println("buffer.flip();");
-        out.println("channel.write(buffer);");
+        out.println("channel.write(buffer); // remote method call");
 
         out.println();
         out.println("buffer.rewind();");
@@ -111,30 +111,35 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         boolean read = false;
         for (int p = 0; p < parameterTypes.length; p++) {
             Class<?> parameter = parameterTypes[p];
-            if(parameter.isArray()) {
-                out.println("  // ignore p"+p);
-                continue;
-            }
             boolean outbound = isOutbound(p, parameterAnnotations);
             if(outbound) {
                 read = true;
-                out.println("if(remaining"+p+" > 0) {");
-                if(parameter.equals(IntBuffer.class)) {
-                    out.println("    readBuffer(channel, p"+p+", buffer);");
-                    out.println("    p"+p+".rewind();");
-                }else if(NativeBuffer.class.isAssignableFrom(parameter)) {
-                    out.println("    channel.read(p"+p+".getBuffer());");
-                    out.println("    p"+p+".rewind();");
-                }else if(parameter.equals(Buffer.class)) {
-                    out.println("    channel.read((ByteBuffer)p"+p+");");
-                    out.println("    p"+p+".rewind();");
-                }else if(isStructAccessor(parameter)) {
-                    out.println("    channel.read(p"+p+".getBuffer());");
-                    out.println("    p"+p+".getBuffer().rewind();");
+
+                if(parameter.isArray()) {
+                    out.println("if(p"+p+" != null) {");
+                    out.println("    readArray(channel, p"+p+", buffer);");
+                    out.println("}");
                 }else{
-                    out.println("  /* ignore */ ");
+                    out.println("if(remaining"+p+" > 0) {");
+                    if(parameter.equals(IntBuffer.class)) {
+                        out.println("    readBuffer(channel, p"+p+", buffer);");
+                        out.println("    p"+p+".rewind();");
+                    }else if(NativeBuffer.class.isAssignableFrom(parameter)) {
+                        out.println("    channel.read(p"+p+".getBuffer());");
+                        out.println("    p"+p+".rewind();");
+                    }else if(parameter.equals(Buffer.class)) {
+                        out.println("    channel.read((ByteBuffer)p"+p+");");
+                        out.println("    p"+p+".rewind();");
+                    }else if(isStructAccessor(parameter)) {
+                        out.println("    channel.read(p"+p+".getBuffer());");
+                        out.println("    p"+p+".getBuffer().rewind();");
+                    }else{
+                        out.println("  /* ignore */ ");
+                    }
+
+                    out.println("}");
                 }
-                out.println("}");
+
             }
         }
         if(read) {
@@ -202,30 +207,26 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         }else if(parameter.isArray()) {
             Class<?> component = parameter.getComponentType();
 
-            if(component.isPrimitive()) {
-                out.println("// ignore "+paramName);
-                return;
-            }
-
             out.println("if("+paramName+"==null) {");
             out.println("    buffer.putInt(-1);");
             out.println("}else{");
-            out.indent();
-            out.println("buffer.putInt("+paramName+".length);");
-            out.println("for(int i = 0; i < "+paramName+".length; i++) {");
-            out.indent();
-            createWriteParameterSection(out, paramName+"[i]", component, p, in);
-            out.unindent();
-            out.println();
-            out.unindent();
+            out.println("    buffer.putInt("+paramName+".length);");
+            if(in) {
+                out.indent();
+                out.println("for(int i = 0; i < "+paramName+".length; i++) {");
+                out.indent();
+                createWriteParameterSection(out, paramName+"[i]", component, p, in);
+                out.unindent();
+                out.println();
+                out.unindent();
+                out.println("}");
+            }
             out.println("}");
-            out.println("}");
+
         }else{
             if(in) {
-                if(parameter.equals(IntBuffer.class)) {
-                    out.println("putInts(buffer, "+paramName+");");
-                }else if(NativeBuffer.class.isAssignableFrom(parameter)) {
-                    out.println("putBytes(buffer, "+paramName+");");
+                if(NativeBuffer.class.isAssignableFrom(parameter) || Buffer.class.isAssignableFrom(parameter)){
+                    out.println("putBuffer(buffer, "+paramName+");");
                 }else if(parameter.equals(String.class)) {
                     out.println("putString(buffer, "+paramName+");");
                 }else{
