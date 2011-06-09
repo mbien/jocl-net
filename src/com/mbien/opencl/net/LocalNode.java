@@ -3,6 +3,7 @@
  */
 package com.mbien.opencl.net;
 
+import com.jogamp.opencl.llb.CL;
 import com.jogamp.opencl.spi.CLInfoAccessor;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLDevice.Type;
@@ -10,9 +11,11 @@ import com.jogamp.opencl.CLPlatform;
 
 import com.mbien.opencl.net.remote.CLRemoteAccessorFactory.CLRemotePlatformInfoAccessor;
 import com.mbien.opencl.net.handler.CLContextHandler;
+import com.mbien.opencl.net.handler.CLKernelHandler;
 import com.mbien.opencl.net.handler.CLProgramHandler;
 import com.mbien.opencl.net.remote.CLRemoteContextBinding;
 import com.mbien.opencl.net.remote.CLRemoteInfoAccessor;
+import com.mbien.opencl.net.remote.CLRemoteKernelBinding;
 import com.mbien.opencl.net.remote.CLRemoteProgramBinding;
 import com.mbien.opencl.net.remote.RemoteNode;
 
@@ -42,7 +45,7 @@ public class LocalNode extends GridNode {
 
     public LocalNode(String group, String name) {
         super(group, name, null);
-        handlers = new CLHandler[5];
+        handlers = new CLHandler[6];
     }
 
     /**
@@ -126,11 +129,14 @@ public class LocalNode extends GridNode {
             }
         }
 
+        CL cl = CLPlatform.getLowLevelCLInterface();
+        
         insertHandler(RemoteNode.SPECIAL_AID, new CLStaticPlatformHandler(platforms));
         insertHandler(RemoteNode.PLATFORM_AID, new CLPlatformHandler(platformMap));
         insertHandler(RemoteNode.DEVICE_AID, new CLDeviceHandler(deviceMap));
-        insertHandler(CLRemoteContextBinding.AID, new CLContextHandler(CLPlatform.getLowLevelCLInterface()));
-        insertHandler(CLRemoteProgramBinding.AID, new CLProgramHandler(CLPlatform.getLowLevelCLInterface()));
+        insertHandler(CLRemoteContextBinding.AID, new CLContextHandler(cl));
+        insertHandler(CLRemoteProgramBinding.AID, new CLProgramHandler(cl));
+        insertHandler(CLRemoteKernelBinding.AID, new CLKernelHandler(cl));
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {

@@ -36,10 +36,13 @@ public class NetBuffers {
         return dest.getLong(0);
     }
 
+    public static void readBytes(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
+        channel.read(dest);
+        dest.clear();
+    }
+
     public static void readBytes(ReadableByteChannel channel, NativeBuffer dest) throws IOException {
-        ByteBuffer bb = dest.getBuffer();
-        channel.read(bb);
-        bb.clear();
+        readBytes(channel, dest.getBuffer());
     }
 
     public static void readInts(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
@@ -104,7 +107,6 @@ public class NetBuffers {
                 dest.put(source.get(sourcepos + i));
             }
         }
-
     }
 
     public static void putInts(ByteBuffer dest, IntBuffer source) {

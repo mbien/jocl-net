@@ -6,11 +6,13 @@ package com.mbien.opencl.net;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLImageFormat;
+import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
 import com.jogamp.opencl.util.CLMultiContext;
 import com.mbien.opencl.net.remote.RemoteNode;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 
 import static java.lang.System.*;
@@ -164,6 +166,15 @@ public class CLNetworkTest {
                 assertTrue(program.isExecutable());
 
                 out.println(program.getBuildLog());
+
+                Map<String, CLKernel> kernels = program.createCLKernels();
+                assertNotNull(kernels);
+                assertFalse(kernels.isEmpty());
+
+                for (CLKernel kernel : kernels.values()) {
+                    out.println(kernel);
+                    kernel.release();
+                }
 
                 program.release();
             }
