@@ -10,7 +10,11 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.List;
 
 import static java.lang.reflect.Modifier.*;
@@ -121,14 +125,12 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                     out.println("}");
                 }else{
                     out.println("if(remaining"+p+" > 0) {");
-                    if(parameter.equals(IntBuffer.class)) {
+                    
+                    if(parameter.equals(ByteBuffer.class) || NativeBuffer.class.isAssignableFrom(parameter)) {
+                        out.println("    readBuffer(channel, p"+p+");");
+                        out.println("    p"+p+".rewind();");
+                    }else if(Buffer.class.isAssignableFrom(parameter)) {
                         out.println("    readBuffer(channel, p"+p+", buffer);");
-                        out.println("    p"+p+".rewind();");
-                    }else if(NativeBuffer.class.isAssignableFrom(parameter)) {
-                        out.println("    channel.read(p"+p+".getBuffer());");
-                        out.println("    p"+p+".rewind();");
-                    }else if(parameter.equals(Buffer.class)) {
-                        out.println("    channel.read((ByteBuffer)p"+p+");");
                         out.println("    p"+p+".rewind();");
                     }else if(isStructAccessor(parameter)) {
                         out.println("    channel.read(p"+p+".getBuffer());");
@@ -150,21 +152,15 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         Class<?> returnType = method.getReturnType();
         if(returnType.isPrimitive()) {
             if(returnType.equals(long.class)) {
-                out.println("buffer.limit(8);");
-                out.println("channel.read(buffer);");
-                out.println("return buffer.getLong(0);");
+                out.println("return readLong(channel, buffer);");
             }else if(returnType.equals(int.class)) {
-                out.println("buffer.limit(4);");
-                out.println("channel.read(buffer);");
-                out.println("return buffer.getInt(0);");
+                out.println("return readInt(channel, buffer);");
+            }else if(returnType.equals(byte.class)) {
+                out.println("return readByte(channel, buffer);");
             }else if(returnType.equals(double.class)) {
-                out.println("buffer.limit(8);");
-                out.println("channel.read(buffer);");
-                out.println("return buffer.getDouble(0);");
+                out.println("return readDouble(channel, buffer);");
             }else if(returnType.equals(float.class)) {
-                out.println("buffer.limit(4);");
-                out.println("channel.read(buffer);");
-                out.println("return buffer.getFloat(0);");
+                out.println("return readFloat(channel, buffer);");
             }else if(returnType.equals(void.class)) {
                 // nothing to do
             }else{
@@ -195,6 +191,8 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         if(parameter.isPrimitive()) {
             if(parameter.equals(long.class)) {
                 out.println("buffer.putLong("+paramName+");");
+            }else if(parameter.equals(byte.class)) {
+                out.println("buffer.put("+paramName+");");
             }else if(parameter.equals(int.class)) {
                 out.println("buffer.putInt("+paramName+");");
             }else if(parameter.equals(double.class)) {
@@ -235,14 +233,17 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
             }else{
                 out.print("int remaining"+p+" = ");
 
-                if(parameter.equals(IntBuffer.class)) {
+                if(parameter.equals(IntBuffer.class) | parameter.equals(FloatBuffer.class)) {
                     out.println(paramName+"==null?"+0+":"+paramName+".remaining()*4;");
+                    out.println("buffer.putInt(remaining"+p+");");
+                }else if(parameter.equals(LongBuffer.class) | parameter.equals(DoubleBuffer.class)){
+                    out.println(paramName+"==null?"+0+":"+paramName+".remaining()*8;");
                     out.println("buffer.putInt(remaining"+p+");");
                 }else if(parameter.equals(NativeSizeBuffer.class)) {
                     out.println(paramName+"==null?"+0+":"+paramName+".remaining()*elementSize();");
                     out.println("buffer.putInt(remaining"+p+");");
                 }else if(parameter.equals(Buffer.class)) {
-                    out.println(paramName+"==null?"+0+":"+paramName+".remaining();");
+                    out.println(paramName+"==null?"+0+":Buffers.sizeOfBufferElem("+paramName+")*"+paramName+".remaining();");
                     out.println("buffer.putInt(remaining"+p+");");
                 }else if(isStructAccessor(parameter)) {
                     out.println(paramName+"==null?0"+":"+paramName+".getBuffer().capacity();");

@@ -72,7 +72,7 @@ public class NetBuffers {
         readBuffer(channel, dest.getBuffer());
         return dest;
     }
-
+    
     public static IntBuffer readBuffer(ReadableByteChannel channel, IntBuffer dest, ByteBuffer temp) throws IOException {
         temp.rewind();
         temp.limit(dest.remaining()*SIZEOF_INT);
@@ -81,6 +81,52 @@ public class NetBuffers {
             dest.put(i, temp.getInt(i*SIZEOF_INT));
         }
         return dest;
+    }
+
+    public static LongBuffer readBuffer(ReadableByteChannel channel, LongBuffer dest, ByteBuffer temp) throws IOException {
+        temp.rewind();
+        temp.limit(dest.remaining()*SIZEOF_LONG);
+        channel.read(temp);
+        for(int i = 0; i < dest.remaining(); i++) {
+            dest.put(i, temp.getInt(i*SIZEOF_LONG));
+        }
+        return dest;
+    }
+
+    public static FloatBuffer readBuffer(ReadableByteChannel channel, FloatBuffer dest, ByteBuffer temp) throws IOException {
+        temp.rewind();
+        temp.limit(dest.remaining()*SIZEOF_FLOAT);
+        channel.read(temp);
+        for(int i = 0; i < dest.remaining(); i++) {
+            dest.put(i, temp.getInt(i*SIZEOF_FLOAT));
+        }
+        return dest;
+    }
+
+    public static DoubleBuffer readBuffer(ReadableByteChannel channel, DoubleBuffer dest, ByteBuffer temp) throws IOException {
+        temp.rewind();
+        temp.limit(dest.remaining()*SIZEOF_DOUBLE);
+        channel.read(temp);
+        for(int i = 0; i < dest.remaining(); i++) {
+            dest.put(i, temp.getInt(i*SIZEOF_DOUBLE));
+        }
+        return dest;
+    }
+
+    public static <T extends Buffer> T readBuffer(ReadableByteChannel channel, T dest, ByteBuffer temp) throws IOException {
+        if(dest instanceof ByteBuffer) {
+            return (T) readBuffer(channel, (ByteBuffer)dest);
+        }else if(dest instanceof IntBuffer) {
+            return (T) readBuffer(channel, (IntBuffer)dest, temp);
+        }else if(dest instanceof LongBuffer) {
+            return (T) readBuffer(channel, (LongBuffer)dest, temp);
+        }else if(dest instanceof FloatBuffer) {
+            return (T) readBuffer(channel, (FloatBuffer)dest, temp);
+        }else if(dest instanceof DoubleBuffer) {
+            return (T) readBuffer(channel, (DoubleBuffer)dest, temp);
+        }else{
+            throw new IllegalArgumentException("unsupported buffer "+dest);
+        }
     }
 
     public static String readString(ReadableByteChannel channel, int length) throws IOException {
@@ -226,7 +272,7 @@ public class NetBuffers {
         }else if(source instanceof DoubleBuffer) {
             putBuffer(dest, (DoubleBuffer)source);
         }else{
-            throw new IllegalArgumentException("unknown buffer "+source);
+            throw new IllegalArgumentException("unsupported buffer "+source);
         }
     }
 
