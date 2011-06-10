@@ -78,7 +78,7 @@ public class NetBuffers {
         temp.limit(dest.remaining()*SIZEOF_INT);
         channel.read(temp);
         for(int i = 0; i < dest.remaining(); i++) {
-            dest.put(i, temp.getInt(i*SIZEOF_INT));
+            dest.put(temp.getInt(i*SIZEOF_INT));
         }
         return dest;
     }
@@ -88,7 +88,7 @@ public class NetBuffers {
         temp.limit(dest.remaining()*SIZEOF_LONG);
         channel.read(temp);
         for(int i = 0; i < dest.remaining(); i++) {
-            dest.put(i, temp.getInt(i*SIZEOF_LONG));
+            dest.put(temp.getInt(i*SIZEOF_LONG));
         }
         return dest;
     }
@@ -98,7 +98,7 @@ public class NetBuffers {
         temp.limit(dest.remaining()*SIZEOF_FLOAT);
         channel.read(temp);
         for(int i = 0; i < dest.remaining(); i++) {
-            dest.put(i, temp.getInt(i*SIZEOF_FLOAT));
+            dest.put(temp.getInt(i*SIZEOF_FLOAT));
         }
         return dest;
     }
@@ -108,7 +108,7 @@ public class NetBuffers {
         temp.limit(dest.remaining()*SIZEOF_DOUBLE);
         channel.read(temp);
         for(int i = 0; i < dest.remaining(); i++) {
-            dest.put(i, temp.getInt(i*SIZEOF_DOUBLE));
+            dest.put(temp.getInt(i*SIZEOF_DOUBLE));
         }
         return dest;
     }
