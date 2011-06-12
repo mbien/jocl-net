@@ -80,7 +80,7 @@ public class GeneratorTest {
         out.println("generator-client-test");
         out.println("native size_t is: "+elementSize());
 
-        final int          HEADER = SIZEOF_BYTE+SIZEOF_INT;
+        final int   SIZEOF_HEADER = SIZEOF_BYTE+SIZEOF_INT;
 
         final long             p0 = rnd.nextLong();
         final int              p1 = rnd.nextInt();
@@ -89,7 +89,7 @@ public class GeneratorTest {
         final IntBuffer        p4 = newDirectIntBuffer(4);
         final int            ret0 = rnd.nextInt();
 
-        ByteBuffer writeBuffer = newDirectByteBuffer( HEADER
+        ByteBuffer writeBuffer = newDirectByteBuffer(SIZEOF_HEADER
                                                     +SIZEOF_LONG+SIZEOF_INT
                                                     +SIZEOF_INT+p2.getBuffer().capacity()
                                                     +SIZEOF_INT+p3.capacity()*SIZEOF_INT
@@ -145,7 +145,7 @@ public class GeneratorTest {
         assertEquals(p4.capacity()*SIZEOF_INT, writeBuffer.getInt());
         readBuffer.rewind();
         for (int i = 0; i < p4.capacity(); i++) {
-            assertEquals(p4.get(), readBuffer.getInt());
+            assertEquals(readBuffer.getInt(), p4.get());
         }
 
 
@@ -172,7 +172,7 @@ public class GeneratorTest {
         long ret3 = client.test2(-12, string, 52);
         assertEquals(SIZEOF_LONG, readBuffer.position());
         assertEquals(readBuffer.getLong(0), ret3);
-        assertEquals(HEADER+SIZEOF_INT+SIZEOF_INT+bytes.length+SIZEOF_INT, writeBuffer.position());
+        assertEquals(SIZEOF_HEADER+SIZEOF_INT+SIZEOF_INT+bytes.length+SIZEOF_INT, writeBuffer.position());
         writeBuffer.rewind();
 
         assertEquals(id, writeBuffer.get());
