@@ -75,9 +75,10 @@ public class NetBuffers {
     
     public static IntBuffer readBuffer(ReadableByteChannel channel, IntBuffer dest, ByteBuffer temp) throws IOException {
         temp.rewind();
-        temp.limit(dest.remaining()*SIZEOF_INT);
+        int remaining = dest.remaining();
+        temp.limit(remaining*SIZEOF_INT);
         channel.read(temp);
-        for(int i = 0; i < dest.remaining(); i++) {
+        for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_INT));
         }
         return dest;
@@ -85,9 +86,10 @@ public class NetBuffers {
 
     public static LongBuffer readBuffer(ReadableByteChannel channel, LongBuffer dest, ByteBuffer temp) throws IOException {
         temp.rewind();
-        temp.limit(dest.remaining()*SIZEOF_LONG);
+        int remaining = dest.remaining();
+        temp.limit(remaining*SIZEOF_LONG);
         channel.read(temp);
-        for(int i = 0; i < dest.remaining(); i++) {
+        for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_LONG));
         }
         return dest;
@@ -95,9 +97,10 @@ public class NetBuffers {
 
     public static FloatBuffer readBuffer(ReadableByteChannel channel, FloatBuffer dest, ByteBuffer temp) throws IOException {
         temp.rewind();
-        temp.limit(dest.remaining()*SIZEOF_FLOAT);
+        int remaining = dest.remaining();
+        temp.limit(remaining*SIZEOF_FLOAT);
         channel.read(temp);
-        for(int i = 0; i < dest.remaining(); i++) {
+        for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_FLOAT));
         }
         return dest;
@@ -105,9 +108,10 @@ public class NetBuffers {
 
     public static DoubleBuffer readBuffer(ReadableByteChannel channel, DoubleBuffer dest, ByteBuffer temp) throws IOException {
         temp.rewind();
-        temp.limit(dest.remaining()*SIZEOF_DOUBLE);
+        int remaining = dest.remaining();
+        temp.limit(remaining*SIZEOF_DOUBLE);
         channel.read(temp);
-        for(int i = 0; i < dest.remaining(); i++) {
+        for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_DOUBLE));
         }
         return dest;
