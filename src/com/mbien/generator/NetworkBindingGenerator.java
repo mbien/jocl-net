@@ -7,9 +7,11 @@ import com.mbien.opencl.net.annotation.InOut;
 import com.mbien.opencl.net.annotation.Out;
 import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.opencl.llb.CL;
+import com.jogamp.opencl.llb.CLCommandQueueBinding;
 import com.jogamp.opencl.llb.CLContextBinding;
 import com.jogamp.opencl.llb.CLKernelBinding;
 import com.jogamp.opencl.llb.CLProgramBinding;
+import com.mbien.generator.interfaces.RemoteCommandQueueBinding;
 import com.mbien.generator.interfaces.RemoteContextBinding;
 import com.mbien.generator.interfaces.RemoteKernelBinding;
 import com.mbien.generator.interfaces.RemoteMemoryBinding;
@@ -58,6 +60,7 @@ public abstract class NetworkBindingGenerator {
         generateBinding((byte)4, "Program", RemoteProgramBinding.class, CLProgramBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)5, "Kernel", RemoteKernelBinding.class, CLKernelBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)6, "Memory", RemoteMemoryBinding.class, CL.class, base, clientPackage, serverPackage);
+        generateBinding((byte)7, "CommandQueue", RemoteCommandQueueBinding.class, CLCommandQueueBinding.class, base, clientPackage, serverPackage);
         
     }
 

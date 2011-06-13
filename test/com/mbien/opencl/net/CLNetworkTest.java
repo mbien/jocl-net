@@ -4,6 +4,7 @@
 package com.mbien.opencl.net;
 
 import com.jogamp.opencl.CLBuffer;
+import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLImageFormat;
@@ -13,10 +14,13 @@ import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
 import com.jogamp.opencl.util.CLMultiContext;
 import com.mbien.opencl.net.remote.RemoteNode;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import org.junit.Test;
 
+import static com.jogamp.common.nio.Buffers.*;
 import static java.lang.System.*;
 import static org.junit.Assert.*;
 
@@ -152,6 +156,7 @@ public class CLNetworkTest {
         List<CLPlatform> platforms = network.getPlatforms();
         CLMultiContext mc = CLMultiContext.create(platforms.toArray(new CLPlatform[platforms.size()]));
 
+        Random rnd = new Random();
         try{
 //            for (int i = 0; i < 100; i++) {
 
@@ -172,19 +177,66 @@ public class CLNetworkTest {
                 Map<String, CLKernel> kernels = program.createCLKernels();
                 assertNotNull(kernels);
                 assertFalse(kernels.isEmpty());
+                assertNotNull(kernels.containsKey("compute"));
 
                 for (CLKernel kernel : kernels.values()) {
                     out.println(kernel);
-                    kernel.release();
                 }
 
+                // buffer test
+                int size = 1024;
+                CLBuffer<?> bufferA = context.createBuffer(size, Mem.READ_WRITE);
+                System.out.println(bufferA +" size: "+bufferA.getCLSize());
+                assertEquals(size, bufferA.getCLSize());
+
+                CLBuffer<?> bufferB = context.createBuffer(size, Mem.READ_WRITE);
+
+                ByteBuffer reference = newDirectByteBuffer(size);
+                while(reference.hasRemaining()) {
+                    reference.putInt(rnd.nextInt());
+                }
+                reference.rewind();
+
+                bufferA = bufferA.cloneWith(reference);
+
+                // commandqueue test
+                CLDevice[] devices = context.getDevices();
+                for (CLDevice device : devices) {
+                    CLCommandQueue queue = device.createCommandQueue();
+                    System.out.println(queue);
+
+                    // write, copy read, check
+                    queue.putWriteBuffer(bufferA, true);
+                    queue.putCopyBuffer(bufferA, bufferB);
+
+                    CLBuffer<ByteBuffer> result = bufferB.cloneWith(newDirectByteBuffer(64));
+                    queue.putReadBuffer(result, true);
+
+                    while(result.getBuffer().hasRemaining()) {
+                        assertEquals(reference.get(), result.getBuffer().get());
+                    }
+                    reference.rewind();
+                    result.getBuffer().rewind();
+
+                    // execute kenrnel, check again
+                    kernels.get("compute").setArg(0, result).setArg(1, size/4);
+                    queue.put1DRangeKernel(kernels.get("compute"), 0, size/4, 0);
+                    queue.putReadBuffer(result, true);
+                    while(result.getBuffer().hasRemaining()) {
+                        assertEquals(reference.getInt()+1, result.getBuffer().getInt());
+                    }
+                    reference.rewind();
+
+                    queue.release();
+                }
+
+                // test if release works
+                bufferA.release();
+                for (CLKernel kernel : kernels.values()) {
+                    kernel.release();
+                }
                 program.release();
 
-                // buffer test
-                CLBuffer<?> buffer = context.createBuffer(64, Mem.READ_WRITE);
-                System.out.println(buffer +" size: "+buffer.getCLSize());
-                assertEquals(64, buffer.getCLSize());
-                buffer.release();
             }
 //            }
         }finally{
