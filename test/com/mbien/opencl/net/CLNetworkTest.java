@@ -18,6 +18,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.jogamp.common.nio.Buffers.*;
@@ -39,15 +41,27 @@ public class CLNetworkTest {
     + "    array[index]++;                                       \n"
     + "}                                                         \n";
 
+    private static CLNetwork network;
+
+    @BeforeClass
+    public static void init() throws InterruptedException{
+        network = CLNetwork.createNetwork("jocl-net");
+        network.startNode("test-node-"+System.currentTimeMillis());
+
+        out.println("waiting for nodes to appear..");
+        waitForNodes(network);
+    }
+
+    @AfterClass
+    public static void deinit() {
+        network.shutdownNode();
+        network = null;
+    }
+
     @Test
     public void serverInfoTest() throws InterruptedException {
 
         out.println("server-info-test");
-
-        CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("test-node");
-
-        waitForNodes(network);
 
         List<RemoteNode> remoteNodes = network.getRemoteNodes();
         out.println("network: "+remoteNodes);
@@ -88,11 +102,6 @@ public class CLNetworkTest {
     public void remoteContextTest() throws InterruptedException {
 
         out.println("remote-context-test");
-
-        CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("test-node");
-
-        waitForNodes(network);
 
         List<CLPlatform> platforms = network.getPlatforms();
         assertTrue(!platforms.isEmpty());
@@ -149,10 +158,6 @@ public class CLNetworkTest {
 
         out.println("remote-program-test");
 
-        CLNetwork network = CLNetwork.createNetwork("jocl-net");
-        network.startNode("test-node");
-
-        waitForNodes(network);
         List<CLPlatform> platforms = network.getPlatforms();
         CLMultiContext mc = CLMultiContext.create(platforms.toArray(new CLPlatform[platforms.size()]));
 
@@ -218,7 +223,7 @@ public class CLNetworkTest {
                     reference.rewind();
                     result.getBuffer().rewind();
 
-                    // execute kenrnel, check again
+                    // execute kernel, check again
                     kernels.get("compute").setArg(0, result).setArg(1, size/4);
                     queue.put1DRangeKernel(kernels.get("compute"), 0, size/4, 0);
                     queue.putReadBuffer(result, true);
@@ -247,7 +252,7 @@ public class CLNetworkTest {
 
     }
 
-    private void waitForNodes(CLNetwork network) throws InterruptedException {
+    private static void waitForNodes(CLNetwork network) throws InterruptedException {
         while(network.getRemoteNodes().isEmpty()) {
             Thread.sleep(1000);
         }
