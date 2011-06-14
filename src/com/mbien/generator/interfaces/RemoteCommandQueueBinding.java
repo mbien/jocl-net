@@ -7,9 +7,12 @@ import com.jogamp.common.nio.NativeSizeBuffer;
 import com.jogamp.opencl.llb.CLCommandQueueBinding;
 import com.mbien.opencl.net.annotation.InOut;
 import com.mbien.opencl.net.annotation.Out;
+import com.mbien.opencl.net.annotation.Unsupported;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+
+import static com.mbien.opencl.net.annotation.Unsupported.Kind.*;
 
 /**
  *
@@ -57,9 +60,6 @@ public interface RemoteCommandQueueBinding extends CLCommandQueueBinding {
     public int clEnqueueTask(long command_queue, long kernel, int num_events_in_wait_list, NativeSizeBuffer event_wait_list, @InOut NativeSizeBuffer event);
 
     @Override
-    public int clEnqueueUnmapMemObject(long command_queue, long memobj, Buffer mapped_ptr, int num_events_in_wait_list, NativeSizeBuffer event_wait_list, @InOut NativeSizeBuffer event);
-
-    @Override
     public int clEnqueueWaitForEvents(long command_queue, int num_events, @InOut NativeSizeBuffer event_list);
 
     @Override
@@ -90,8 +90,14 @@ public interface RemoteCommandQueueBinding extends CLCommandQueueBinding {
     public int clRetainCommandQueue(long command_queue);
 
     @Override
+    @Unsupported(UOE)
     public ByteBuffer clEnqueueMapBuffer(long command_queue, long buffer, int blocking_map, long map_flags, long offset, long cb, int num_events_in_wait_list, NativeSizeBuffer event_wait_list, NativeSizeBuffer event, IntBuffer errcode_ret);
 
     @Override
+    @Unsupported(UOE)
     public ByteBuffer clEnqueueMapImage(long command_queue, long image, int blocking_map, long map_flags, NativeSizeBuffer arg4, NativeSizeBuffer arg5, NativeSizeBuffer image_row_pitch, NativeSizeBuffer image_slice_pitch, int num_events_in_wait_list, NativeSizeBuffer event_wait_list, NativeSizeBuffer event, IntBuffer errcode_ret);
+
+    @Override
+    @Unsupported(UOE)
+    public int clEnqueueUnmapMemObject(long command_queue, long memobj, Buffer mapped_ptr, int num_events_in_wait_list, NativeSizeBuffer event_wait_list, @InOut NativeSizeBuffer event);
 }

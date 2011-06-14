@@ -2,6 +2,7 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.annotation.Out;
+import com.mbien.opencl.net.annotation.Unsupported;
 import java.nio.IntBuffer;
 
 /**
@@ -19,5 +20,8 @@ public interface Target {
     public void test1();
     
     public long test2(int a, String foo, int b);
+
+    @Unsupported(Unsupported.Kind.UOE)
+    public void test3();
 
 }

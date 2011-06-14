@@ -5,6 +5,8 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.common.nio.NativeSizeBuffer;
+import com.mbien.opencl.net.annotation.Unsupported;
+import com.mbien.opencl.net.annotation.Unsupported.Kind;
 import com.mbien.opencl.net.remote.CLRemoteBinding;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -82,6 +84,21 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
 
         out.println();
 
+        if(method.isAnnotationPresent(Unsupported.class)) {
+            Kind value = method.getAnnotation(Unsupported.class).value();
+            if(value.equals(Kind.NOOP)) {
+                out.println("// NOOP");
+            }else if(value.equals(Kind.UOE)) {
+                out.println(exception(UnsupportedOperationException.class, "\"method not supported\""));
+            }
+
+            out.unindent();
+            out.println();
+            out.println("}");
+            out.unindent();
+            return;
+        }
+
         out.println("ByteBuffer buffer = getBuffer();");
         out.println("buffer.put((byte)"+BINDING_ID+");");
         out.println("buffer.putInt("+id+");");
@@ -99,9 +116,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         for (int p = 0; p < parameterTypes.length; p++) {
 
             Class<?> parameter = parameterTypes[p];
-            boolean inbound = isInbound(p, parameterAnnotations);
-            boolean outbound = isOutbound(p, parameterAnnotations);
-            createWriteParameterSection(out, "p"+p, parameter, p, inbound, outbound);
+            createWriteParameterSection(out, "p"+p, parameter, p, parameterAnnotations);
 
         }
 
@@ -190,9 +205,15 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
         out.println("}");
     }
 
-    private void createWriteParameterSection(IndentingWriter out, String paramName, Class<?> parameter, int p, boolean inbound, boolean outbound) throws RuntimeException {
+    private void createWriteParameterSection(IndentingWriter out, String paramName, Class<?> parameter, int p, Annotation[][] annotations) throws RuntimeException {
 
-        if(parameter.isPrimitive()) {
+        boolean inbound = isInbound(p, annotations);
+        boolean outbound = isOutbound(p, annotations);
+        boolean unsupported = isAnnotatedWith(p, annotations, Unsupported.class);
+
+        if(unsupported) {
+            out.println("// @Unsupported "+paramName);
+        }else if(parameter.isPrimitive()) {
             if(parameter.equals(long.class)) {
                 out.println("buffer.putLong("+paramName+");");
             }else if(parameter.equals(byte.class)) {
@@ -217,7 +238,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
                 out.indent();
                 out.println("for(int i = 0; i < "+paramName+".length; i++) {");
                 out.indent();
-                createWriteParameterSection(out, paramName+"[i]", component, p, inbound, outbound);
+                createWriteParameterSection(out, paramName+"[i]", component, p, annotations);
                 out.unindent();
                 out.println();
                 out.unindent();

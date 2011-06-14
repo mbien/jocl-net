@@ -9,8 +9,11 @@ import com.jogamp.opencl.llb.CLImageBinding;
 import com.jogamp.opencl.llb.impl.CLImageFormatImpl;
 import com.jogamp.opencl.llb.impl.CLMemObjectDestructorCallback;
 import com.mbien.opencl.net.annotation.Out;
+import com.mbien.opencl.net.annotation.Unsupported;
 import java.nio.Buffer;
 import java.nio.IntBuffer;
+
+import static com.mbien.opencl.net.annotation.Unsupported.Kind.*;
 
 /**
  *
@@ -49,6 +52,7 @@ public interface RemoteMemoryBinding extends CLBufferBinding, CLImageBinding {
     public int clGetMemObjectInfo(long memobj, int param_name, long param_value_size, @Out Buffer param_value, @Out NativeSizeBuffer param_value_size_ret);
 
     @Override
+    @Unsupported(UOE)
     public int clSetMemObjectDestructorCallback(long memObjID, CLMemObjectDestructorCallback cb);
 
     @Override

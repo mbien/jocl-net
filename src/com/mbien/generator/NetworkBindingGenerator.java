@@ -289,4 +289,20 @@ public abstract class NetworkBindingGenerator {
         return false;
     }
 
+    protected String exception(Class type, String msg) {
+        return "throw new "+getTypeName(type) + "("+msg+");";
+    }
+
+    protected String nullOf(Class parameter) {
+        if(parameter.isPrimitive()) {
+            if(parameter.equals(boolean.class)) {
+                return "false";
+            }else{
+                return "0";
+            }
+        }else{
+            return "null";
+        }
+    }
+
 }

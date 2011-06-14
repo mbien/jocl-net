@@ -186,6 +186,12 @@ public class GeneratorTest {
         }
         assertEquals(52, writeBuffer.getInt()); // p2
 
+        // test3
+        try{
+            client.test3();
+            fail();
+        }catch (UnsupportedOperationException expected) {}
+
     }
 
     @Test
@@ -243,6 +249,11 @@ public class GeneratorTest {
                 return ret2;
             }
 
+            @Override
+            public void test3() {
+                throw new RuntimeException("should not be called");
+            }
+
             private void called(int test) {
                 if(called[test]) fail(test + " already called");
                 called[test] = true;
@@ -294,6 +305,13 @@ public class GeneratorTest {
         assertTrue(called[2]);
         assertEquals(ret2, writeBuffer.getLong(0));
 
+
+        // test 3
+        try{
+            server.handle(null, 3);
+            fail();
+        }catch (UnsupportedOperationException expected) {}
+        
     }
 
     private Target createClientInterface(final DebugChannel channel) throws InvocationTargetException, SecurityException, IllegalAccessException, ClassNotFoundException, InstantiationException, NoSuchMethodException, IllegalArgumentException {

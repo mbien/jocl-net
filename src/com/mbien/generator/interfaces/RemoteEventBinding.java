@@ -7,8 +7,12 @@ import com.jogamp.common.nio.NativeSizeBuffer;
 import com.jogamp.opencl.llb.CLEventBinding;
 import com.jogamp.opencl.llb.impl.CLEventCallback;
 import com.mbien.opencl.net.annotation.Out;
+import com.mbien.opencl.net.annotation.Unsupported;
 import java.nio.Buffer;
 import java.nio.IntBuffer;
+
+
+import static com.mbien.opencl.net.annotation.Unsupported.Kind.*;
 
 /**
  *
@@ -41,6 +45,7 @@ public interface RemoteEventBinding extends CLEventBinding {
     public int clWaitForEvents(int num_events, NativeSizeBuffer event_list);
 
     @Override
+    @Unsupported(UOE)
     public int clSetEventCallback(long event, int type, CLEventCallback cb);
     
 }

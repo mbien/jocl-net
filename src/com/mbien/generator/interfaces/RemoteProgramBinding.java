@@ -7,8 +7,11 @@ import com.jogamp.common.nio.NativeSizeBuffer;
 import com.jogamp.opencl.llb.CLProgramBinding;
 import com.jogamp.opencl.llb.impl.BuildProgramCallback;
 import com.mbien.opencl.net.annotation.Out;
+import com.mbien.opencl.net.annotation.Unsupported;
 import java.nio.Buffer;
 import java.nio.IntBuffer;
+
+import static com.mbien.opencl.net.annotation.Unsupported.Kind.*;
 
 /**
  *
@@ -35,6 +38,6 @@ public interface RemoteProgramBinding extends CLProgramBinding {
     public int clRetainProgram(long program);
 
     @Override
-    public int clBuildProgram(long program, int deviceCount, NativeSizeBuffer devices, String options, BuildProgramCallback cb);
+    public int clBuildProgram(long program, int deviceCount, NativeSizeBuffer devices, String options, @Unsupported(NOOP) BuildProgramCallback cb);
 
 }
