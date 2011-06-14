@@ -8,10 +8,12 @@ import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.llb.CLBufferBinding;
 import com.jogamp.opencl.llb.CLCommandQueueBinding;
 import com.jogamp.opencl.llb.CLContextBinding;
+import com.jogamp.opencl.llb.CLEventBinding;
 import com.jogamp.opencl.llb.CLImageBinding;
 import com.jogamp.opencl.llb.CLKernelBinding;
 import com.jogamp.opencl.llb.CLMemObjBinding;
 import com.jogamp.opencl.llb.CLProgramBinding;
+import com.jogamp.opencl.llb.CLSamplerBinding;
 
 
 /**
@@ -25,6 +27,8 @@ public class CLRemotePlatform extends CLPlatform {
     private final CLRemoteKernelBinding kernelBinding;
     private final CLRemoteMemoryBinding memoryBinding;
     private final CLRemoteCommandQueueBinding queueBinding;
+    private final CLRemoteSamplerBinding samplerBinding;
+    private final CLRemoteEventBinding eventBinding;
 
     private final RemoteNode node;
 
@@ -36,6 +40,8 @@ public class CLRemotePlatform extends CLPlatform {
         this.kernelBinding = new CLRemoteKernelBinding(node);
         this.memoryBinding = new CLRemoteMemoryBinding(node);
         this.queueBinding = new CLRemoteCommandQueueBinding(node);
+        this.samplerBinding = new CLRemoteSamplerBinding(node);
+        this.eventBinding = new CLRemoteEventBinding(node);
     }
 
     @Override
@@ -76,6 +82,16 @@ public class CLRemotePlatform extends CLPlatform {
     @Override
     protected CLCommandQueueBinding getCommandQueueBinding() {
         return queueBinding;
+    }
+
+    @Override
+    protected CLSamplerBinding getSamplerBinding() {
+        return samplerBinding;
+    }
+
+    @Override
+    protected CLEventBinding getEventBinding() {
+        return eventBinding;
     }
 
 }
