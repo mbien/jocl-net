@@ -7,11 +7,16 @@ import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
+import com.jogamp.opencl.CLEvent;
 import com.jogamp.opencl.CLImageFormat;
 import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
+import com.jogamp.opencl.CLSampler;
+import com.jogamp.opencl.CLSampler.AddressingMode;
+import com.jogamp.opencl.CLSampler.FilteringMode;
+import com.jogamp.opencl.CLUserEvent;
 import com.jogamp.opencl.util.CLMultiContext;
 import com.mbien.opencl.net.remote.RemoteNode;
 import java.nio.ByteBuffer;
@@ -22,6 +27,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static com.jogamp.opencl.CLVersion.*;
+import static com.jogamp.opencl.util.CLPlatformFilters.*;
 import static com.jogamp.common.nio.Buffers.*;
 import static java.lang.System.*;
 import static org.junit.Assert.*;
@@ -241,7 +248,7 @@ public class CLNetworkTest {
                     kernel.release();
                 }
                 program.release();
-
+                
             }
 //            }
         }finally{
@@ -250,6 +257,34 @@ public class CLNetworkTest {
 
         network.shutdownNode();
 
+    }
+    
+    @Test
+    public void cl11Test() {
+
+        out.println("cl1.1-test");
+
+        List<CLPlatform> platforms = network.getPlatforms(version(CL_1_1));
+        assertFalse(platforms.isEmpty());
+
+        CLMultiContext mc = CLMultiContext.create(platforms.toArray(new CLPlatform[platforms.size()]));
+
+        try{
+            for (CLContext context : mc.getContexts()) {
+                CLSampler sampler = context.createSampler(AddressingMode.CLAMP, FilteringMode.NEAREST, true);
+                System.out.println(sampler);
+                assertEquals(AddressingMode.CLAMP, sampler.getAddressingMode());
+                assertEquals(FilteringMode.NEAREST, sampler.getFilteringMode());
+                sampler.release();
+
+                CLUserEvent event = CLUserEvent.create(context);
+                assertEquals(CLEvent.ExecutionStatus.SUBMITTED, event.getStatus());
+                event.setComplete();
+                assertTrue(event.isComplete());
+            }
+        }finally{
+            mc.release();
+        }
     }
 
     private static void waitForNodes(CLNetwork network) throws InterruptedException {
