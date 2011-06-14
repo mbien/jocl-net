@@ -9,13 +9,17 @@ import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.opencl.llb.CL;
 import com.jogamp.opencl.llb.CLCommandQueueBinding;
 import com.jogamp.opencl.llb.CLContextBinding;
+import com.jogamp.opencl.llb.CLEventBinding;
 import com.jogamp.opencl.llb.CLKernelBinding;
 import com.jogamp.opencl.llb.CLProgramBinding;
+import com.jogamp.opencl.llb.CLSamplerBinding;
 import com.mbien.generator.interfaces.RemoteCommandQueueBinding;
 import com.mbien.generator.interfaces.RemoteContextBinding;
+import com.mbien.generator.interfaces.RemoteEventBinding;
 import com.mbien.generator.interfaces.RemoteKernelBinding;
 import com.mbien.generator.interfaces.RemoteMemoryBinding;
 import com.mbien.generator.interfaces.RemoteProgramBinding;
+import com.mbien.generator.interfaces.RemoteSamplerBinding;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -61,6 +65,8 @@ public abstract class NetworkBindingGenerator {
         generateBinding((byte)5, "Kernel", RemoteKernelBinding.class, CLKernelBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)6, "Memory", RemoteMemoryBinding.class, CL.class, base, clientPackage, serverPackage);
         generateBinding((byte)7, "CommandQueue", RemoteCommandQueueBinding.class, CLCommandQueueBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)8, "Event", RemoteEventBinding.class, CLEventBinding.class, base, clientPackage, serverPackage);
+        generateBinding((byte)9, "Sampler", RemoteSamplerBinding.class, CLSamplerBinding.class, base, clientPackage, serverPackage);
         
     }
 

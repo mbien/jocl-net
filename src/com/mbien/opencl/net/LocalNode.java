@@ -12,15 +12,19 @@ import com.mbien.opencl.net.handler.CLCommandQueueHandler;
 
 import com.mbien.opencl.net.remote.CLRemoteAccessorFactory.CLRemotePlatformInfoAccessor;
 import com.mbien.opencl.net.handler.CLContextHandler;
+import com.mbien.opencl.net.handler.CLEventHandler;
 import com.mbien.opencl.net.handler.CLKernelHandler;
 import com.mbien.opencl.net.handler.CLMemoryHandler;
 import com.mbien.opencl.net.handler.CLProgramHandler;
+import com.mbien.opencl.net.handler.CLSamplerHandler;
 import com.mbien.opencl.net.remote.CLRemoteCommandQueueBinding;
 import com.mbien.opencl.net.remote.CLRemoteContextBinding;
+import com.mbien.opencl.net.remote.CLRemoteEventBinding;
 import com.mbien.opencl.net.remote.CLRemoteInfoAccessor;
 import com.mbien.opencl.net.remote.CLRemoteKernelBinding;
 import com.mbien.opencl.net.remote.CLRemoteMemoryBinding;
 import com.mbien.opencl.net.remote.CLRemoteProgramBinding;
+import com.mbien.opencl.net.remote.CLRemoteSamplerBinding;
 import com.mbien.opencl.net.remote.RemoteNode;
 
 import java.io.IOException;
@@ -49,7 +53,7 @@ public class LocalNode extends GridNode {
 
     public LocalNode(String group, String name) {
         super(group, name, null);
-        handlers = new CLHandler[8];
+        handlers = new CLHandler[10];
     }
 
     /**
@@ -134,15 +138,20 @@ public class LocalNode extends GridNode {
         }
 
         CL cl = CLPlatform.getLowLevelCLInterface();
-        
+
+        // accessors
         insertHandler(RemoteNode.SPECIAL_AID, new CLStaticPlatformHandler(platforms));
         insertHandler(RemoteNode.PLATFORM_AID, new CLPlatformHandler(platformMap));
         insertHandler(RemoteNode.DEVICE_AID, new CLDeviceHandler(deviceMap));
+
+        // bindings
         insertHandler(CLRemoteContextBinding.AID, new CLContextHandler(cl));
         insertHandler(CLRemoteProgramBinding.AID, new CLProgramHandler(cl));
         insertHandler(CLRemoteKernelBinding.AID, new CLKernelHandler(cl));
         insertHandler(CLRemoteMemoryBinding.AID, new CLMemoryHandler(cl));
         insertHandler(CLRemoteCommandQueueBinding.AID, new CLCommandQueueHandler(cl));
+        insertHandler(CLRemoteEventBinding.AID, new CLEventHandler(cl));
+        insertHandler(CLRemoteSamplerBinding.AID, new CLSamplerHandler(cl));
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {
