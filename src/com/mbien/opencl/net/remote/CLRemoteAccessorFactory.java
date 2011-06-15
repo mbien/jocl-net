@@ -4,6 +4,7 @@
 package com.mbien.opencl.net.remote;
 
 import com.jogamp.opencl.llb.CL;
+import com.jogamp.opencl.llb.CLDeviceBinding;
 import com.jogamp.opencl.spi.CLAccessorFactory;
 import com.jogamp.opencl.spi.CLInfoAccessor;
 import com.jogamp.opencl.spi.CLPlatformInfoAccessor;
@@ -28,7 +29,7 @@ public class CLRemoteAccessorFactory implements CLAccessorFactory {
     }
 
     @Override
-    public CLInfoAccessor createDeviceInfoAccessor(CL cl, long id) {
+    public CLInfoAccessor createDeviceInfoAccessor(CLDeviceBinding cl, long id) {
         return new CLRemoteInfoAccessor(node, RemoteNode.DEVICE_AID, id);
     }
 

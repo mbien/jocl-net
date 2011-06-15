@@ -3,7 +3,6 @@
  */
 package com.mbien.opencl.net.remote;
 
-import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.llb.CLBufferBinding;
 import com.jogamp.opencl.llb.CLCommandQueueBinding;
@@ -42,11 +41,6 @@ public class CLRemotePlatform extends CLPlatform {
         this.queueBinding = new CLRemoteCommandQueueBinding(node);
         this.samplerBinding = new CLRemoteSamplerBinding(node);
         this.eventBinding = new CLRemoteEventBinding(node);
-    }
-
-    @Override
-    protected CLDevice createDevice(long id) {
-        return new CLRemoteDevice(this, node, id);
     }
 
     @Override
