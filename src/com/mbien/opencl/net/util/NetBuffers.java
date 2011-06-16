@@ -30,49 +30,49 @@ public class NetBuffers {
 
     public static byte readByte(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
         dest.limit(SIZEOF_BYTE);
-        channel.read(dest);
+        read(channel, dest);
         dest.rewind();
         return dest.get(0);
     }
 
     public static int readShort(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
         dest.limit(SIZEOF_SHORT);
-        channel.read(dest);
+        read(channel, dest);
         dest.rewind();
         return dest.getShort(0);
     }
 
     public static int readInt(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
         dest.limit(SIZEOF_INT);
-        channel.read(dest);
+        read(channel, dest);
         dest.rewind();
         return dest.getInt(0);
     }
 
     public static long readLong(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
         dest.limit(SIZEOF_LONG);
-        channel.read(dest);
+        read(channel, dest);
         dest.rewind();
         return dest.getLong(0);
     }
 
     public static float readFloat(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
         dest.limit(SIZEOF_FLOAT);
-        channel.read(dest);
+        read(channel, dest);
         dest.rewind();
         return dest.getFloat(0);
     }
 
     public static double readDouble(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
         dest.limit(SIZEOF_DOUBLE);
-        channel.read(dest);
+        read(channel, dest);
         dest.rewind();
         return dest.getDouble(0);
     }
 
 
     public static ByteBuffer readBuffer(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
-        channel.read(dest);
+        read(channel, dest);
         dest.clear();
         return dest;
     }
@@ -86,7 +86,7 @@ public class NetBuffers {
         temp.rewind();
         int remaining = dest.remaining();
         temp.limit(remaining*SIZEOF_SHORT);
-        channel.read(temp);
+        read(channel, temp);
         for(int i = 0; i < remaining; i++) {
             dest.put(temp.getShort(i*SIZEOF_SHORT));
         }
@@ -97,7 +97,7 @@ public class NetBuffers {
         temp.rewind();
         int remaining = dest.remaining();
         temp.limit(remaining*SIZEOF_INT);
-        channel.read(temp);
+        read(channel, temp);
         for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_INT));
         }
@@ -108,7 +108,7 @@ public class NetBuffers {
         temp.rewind();
         int remaining = dest.remaining();
         temp.limit(remaining*SIZEOF_LONG);
-        channel.read(temp);
+        read(channel, temp);
         for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_LONG));
         }
@@ -119,7 +119,7 @@ public class NetBuffers {
         temp.rewind();
         int remaining = dest.remaining();
         temp.limit(remaining*SIZEOF_FLOAT);
-        channel.read(temp);
+        read(channel, temp);
         for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_FLOAT));
         }
@@ -130,7 +130,7 @@ public class NetBuffers {
         temp.rewind();
         int remaining = dest.remaining();
         temp.limit(remaining*SIZEOF_DOUBLE);
-        channel.read(temp);
+        read(channel, temp);
         for(int i = 0; i < remaining; i++) {
             dest.put(temp.getInt(i*SIZEOF_DOUBLE));
         }
@@ -161,7 +161,7 @@ public class NetBuffers {
         }
 
         ByteBuffer buffer = ByteBuffer.allocate(length).order(ByteOrder.nativeOrder());
-        channel.read(buffer);
+        read(channel, buffer);
         buffer.rewind();
         return new String(buffer.array());
     }
@@ -169,7 +169,7 @@ public class NetBuffers {
     public static byte[] readArray(ReadableByteChannel channel, byte[] array, ByteBuffer temp) throws IOException {
         temp.rewind();
         temp.limit(array.length*SIZEOF_BYTE);
-        channel.read(temp);
+        read(channel, temp);
         for (int i = 0; i < array.length; i++) {
             array[i] = temp.get(i*SIZEOF_BYTE);
         }
@@ -179,7 +179,7 @@ public class NetBuffers {
     public static int[] readArray(ReadableByteChannel channel, int[] array, ByteBuffer temp) throws IOException {
         temp.rewind();
         temp.limit(array.length*SIZEOF_INT);
-        channel.read(temp);
+        read(channel, temp);
         for (int i = 0; i < array.length; i++) {
             array[i] = temp.getInt(i*SIZEOF_INT);
         }
@@ -189,7 +189,7 @@ public class NetBuffers {
     public static long[] readArray(ReadableByteChannel channel, long[] array, ByteBuffer temp) throws IOException {
         temp.rewind();
         temp.limit(array.length*SIZEOF_LONG);
-        channel.read(temp);
+        read(channel, temp);
         for (int i = 0; i < array.length; i++) {
             array[i] = temp.getLong(i*SIZEOF_LONG);
         }
@@ -199,7 +199,7 @@ public class NetBuffers {
     public static float[] readArray(ReadableByteChannel channel, float[] array, ByteBuffer temp) throws IOException {
         temp.rewind();
         temp.limit(array.length*SIZEOF_FLOAT);
-        channel.read(temp);
+        read(channel, temp);
         for (int i = 0; i < array.length; i++) {
             array[i] = temp.getFloat(i*SIZEOF_FLOAT);
         }
@@ -209,7 +209,7 @@ public class NetBuffers {
     public static double[] readArray(ReadableByteChannel channel, double[] array, ByteBuffer temp) throws IOException {
         temp.rewind();
         temp.limit(array.length*SIZEOF_DOUBLE);
-        channel.read(temp);
+        read(channel, temp);
         for (int i = 0; i < array.length; i++) {
             array[i] = temp.getDouble(i*SIZEOF_DOUBLE);
         }
@@ -220,7 +220,7 @@ public class NetBuffers {
         temp.limit(SIZEOF_SHORT);
         temp.putInt(0, value);
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -228,7 +228,7 @@ public class NetBuffers {
         temp.limit(SIZEOF_INT);
         temp.putInt(0, value);
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -236,7 +236,7 @@ public class NetBuffers {
         temp.limit(SIZEOF_LONG);
         temp.putLong(0, value);
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -246,7 +246,7 @@ public class NetBuffers {
             temp.put(value[i]);
         }
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -255,8 +255,9 @@ public class NetBuffers {
         for (int i = 0; i < value.length; i++) {
             temp.putInt(value[i]);
         }
+
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -266,7 +267,7 @@ public class NetBuffers {
             temp.putLong(value[i]);
         }
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -276,7 +277,7 @@ public class NetBuffers {
             temp.putFloat(value[i]);
         }
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
@@ -286,115 +287,144 @@ public class NetBuffers {
             temp.putDouble(value[i]);
         }
         temp.rewind();
-        channel.write(temp);
+        write(channel, temp);
         temp.clear();
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, Buffer source, ByteBuffer buffer) throws IOException {
+    private static void writeNullBuffer(ByteBuffer buffer, WritableByteChannel channel) throws IOException {
+        buffer.putInt(0);
+        write(channel, buffer);
+        buffer.clear();
+    }
+
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, Buffer source) throws IOException {
         if(source == null) {
-            buffer.putInt(0);
-            channel.write(buffer);
+            writeNullBuffer(buffer, channel);
         }else if(source instanceof ByteBuffer) {
-            writeLargeBuffer(channel, (ByteBuffer) source, buffer);
+            writeLargeBuffer(channel, buffer, (ByteBuffer) source);
         }else if(source instanceof ShortBuffer) {
-            writeLargeBuffer(channel, (ShortBuffer) source, buffer);
+            writeLargeBuffer(channel, buffer, (ShortBuffer) source);
         }else if(source instanceof IntBuffer) {
-            writeLargeBuffer(channel, (IntBuffer) source, buffer);
+            writeLargeBuffer(channel, buffer, (IntBuffer) source);
         }else if(source instanceof LongBuffer) {
-            writeLargeBuffer(channel, (LongBuffer) source, buffer);
+            writeLargeBuffer(channel, buffer, (LongBuffer) source);
         }else if(source instanceof FloatBuffer) {
-            writeLargeBuffer(channel, (FloatBuffer) source, buffer);
+            writeLargeBuffer(channel, buffer, (FloatBuffer) source);
         }else if(source instanceof DoubleBuffer) {
-            writeLargeBuffer(channel, (DoubleBuffer) source, buffer);
+            writeLargeBuffer(channel, buffer, (DoubleBuffer) source);
         }else{
             throw new IllegalArgumentException("unsupported buffer "+source);
         }
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer source, ByteBuffer buffer) throws IOException {
-        buffer.putInt(source.remaining());
-        buffer.flip();
-        channel.write(buffer);
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, ByteBuffer source) throws IOException {
+        if(source == null) {
+            writeNullBuffer(buffer, channel);
+        }else{
+            buffer.putInt(source.remaining());
+            buffer.flip();
+            write(channel, buffer);
 
-        source.mark();
-        channel.write((ByteBuffer) source);
-        source.reset();
-        buffer.clear();
+            source.mark();
+            write(channel, source);
+            source.reset();
+            buffer.clear();
+        }
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, ShortBuffer source, ByteBuffer buffer) throws IOException {
-        buffer.putInt(source.remaining()*SIZEOF_SHORT);
-        source.mark();
-        do{
-            int remaining = min(buffer.remaining()/SIZEOF_SHORT, source.remaining());
-            for (int i = 0; i < remaining; i++) {
-                buffer.putShort(source.get());
-            }
-            buffer.flip();
-            channel.write(buffer);
-            buffer.clear();
-        }while(source.hasRemaining());
-        source.reset();
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, ShortBuffer source) throws IOException {
+        if(source == null) {
+            writeNullBuffer(buffer, channel);
+        }else{
+            buffer.putInt(source.remaining()*SIZEOF_SHORT);
+            source.mark();
+            do{
+                int remaining = min(buffer.remaining()/SIZEOF_SHORT, source.remaining());
+                for (int i = 0; i < remaining; i++) {
+                    buffer.putShort(source.get());
+                }
+                buffer.flip();
+                write(channel, buffer);
+                buffer.clear();
+            }while(source.hasRemaining());
+            source.reset();
+        }
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, IntBuffer source, ByteBuffer buffer) throws IOException {
-        buffer.putInt(source.remaining()*SIZEOF_INT);
-        source.mark();
-        do{
-            int remaining = min(buffer.remaining()/SIZEOF_INT, source.remaining());
-            for (int i = 0; i < remaining; i++) {
-                buffer.putInt(source.get());
-            }
-            buffer.flip();
-            channel.write(buffer);
-            buffer.clear();
-        }while(source.hasRemaining());
-        source.reset();
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, IntBuffer source) throws IOException {
+        if(source == null) {
+            writeNullBuffer(buffer, channel);
+        }else{
+            buffer.putInt(source.remaining()*SIZEOF_INT);
+            source.mark();
+            do{
+                int remaining = min(buffer.remaining()/SIZEOF_INT, source.remaining());
+                for (int i = 0; i < remaining; i++) {
+                    buffer.putInt(source.get());
+                }
+                buffer.flip();
+                write(channel, buffer);
+                buffer.clear();
+            }while(source.hasRemaining());
+            source.reset();
+        }
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, LongBuffer source, ByteBuffer buffer) throws IOException {
-        buffer.putInt(source.remaining()*SIZEOF_LONG);
-        source.mark();
-        do{
-            int remaining = min(buffer.remaining()/SIZEOF_LONG, source.remaining());
-            for (int i = 0; i < remaining; i++) {
-                buffer.putLong(source.get());
-            }
-            buffer.flip();
-            channel.write(buffer);
-            buffer.clear();
-        }while(source.hasRemaining());
-        source.reset();
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, LongBuffer source) throws IOException {
+        if(source == null) {
+            writeNullBuffer(buffer, channel);
+        }else{
+            buffer.putInt(source.remaining()*SIZEOF_LONG);
+            source.mark();
+            do{
+                int remaining = min(buffer.remaining()/SIZEOF_LONG, source.remaining());
+                for (int i = 0; i < remaining; i++) {
+                    buffer.putLong(source.get());
+                }
+                buffer.flip();
+                write(channel, buffer);
+                buffer.clear();
+            }while(source.hasRemaining());
+            source.reset();
+        }
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, FloatBuffer source, ByteBuffer buffer) throws IOException {
-        buffer.putInt(source.remaining()*SIZEOF_FLOAT);
-        source.mark();
-        do{
-            int remaining = min(buffer.remaining()/SIZEOF_FLOAT, source.remaining());
-            for (int i = 0; i < remaining; i++) {
-                buffer.putFloat(source.get());
-            }
-            buffer.flip();
-            channel.write(buffer);
-            buffer.clear();
-        }while(source.hasRemaining());
-        source.reset();
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, FloatBuffer source) throws IOException {
+        if(source == null) {
+            writeNullBuffer(buffer, channel);
+        }else{
+            buffer.putInt(source.remaining()*SIZEOF_FLOAT);
+            source.mark();
+            do{
+                int remaining = min(buffer.remaining()/SIZEOF_FLOAT, source.remaining());
+                for (int i = 0; i < remaining; i++) {
+                    buffer.putFloat(source.get());
+                }
+                buffer.flip();
+                write(channel, buffer);
+                buffer.clear();
+            }while(source.hasRemaining());
+            source.reset();
+        }
     }
 
-    public static void writeLargeBuffer(WritableByteChannel channel, DoubleBuffer source, ByteBuffer buffer) throws IOException {
-        buffer.putInt(source.remaining()*SIZEOF_DOUBLE);
-        source.mark();
-        do{
-            int remaining = min(buffer.remaining()/SIZEOF_DOUBLE, source.remaining());
-            for (int i = 0; i < remaining; i++) {
-                buffer.putDouble(source.get());
-            }
-            buffer.flip();
-            channel.write(buffer);
-            buffer.clear();
-        }while(source.hasRemaining());
-        source.reset();
+    public static void writeLargeBuffer(WritableByteChannel channel, ByteBuffer buffer, DoubleBuffer source) throws IOException {
+        if(source == null) {
+            writeNullBuffer(buffer, channel);
+        }else{
+            buffer.putInt(source.remaining()*SIZEOF_DOUBLE);
+            source.mark();
+            do{
+                int remaining = min(buffer.remaining()/SIZEOF_DOUBLE, source.remaining());
+                for (int i = 0; i < remaining; i++) {
+                    buffer.putDouble(source.get());
+                }
+                buffer.flip();
+                write(channel, buffer);
+                buffer.clear();
+            }while(source.hasRemaining());
+            source.reset();
+        }
     }
 
     public static void putBuffer(ByteBuffer dest, Buffer source) {
@@ -497,6 +527,26 @@ public class NetBuffers {
             byte[] bytes = string.getBytes();
             dest.putInt(bytes.length);
             dest.put(bytes);
+        }
+    }
+
+    public static void read(ReadableByteChannel channel, ByteBuffer dest) throws IOException {
+        int bytes;
+        do{
+            bytes = channel.read(dest);
+        }while(dest.hasRemaining() && bytes >= 0);
+        if(bytes < 0 && dest.hasRemaining()) {
+            throw new IOException("end of stream");
+        }
+    }
+
+    public static void write(WritableByteChannel channel, ByteBuffer source) throws IOException {
+        int bytes;
+        do{
+            bytes = channel.write(source);
+        }while(source.hasRemaining() && bytes >= 0);
+        if(bytes < 0 && source.hasRemaining()) {
+            throw new IOException("end of stream");
         }
     }
 

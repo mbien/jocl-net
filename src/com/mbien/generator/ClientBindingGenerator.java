@@ -5,6 +5,7 @@ package com.mbien.generator;
 
 import com.jogamp.common.nio.NativeBuffer;
 import com.jogamp.common.nio.NativeSizeBuffer;
+import com.mbien.opencl.net.annotation.Large;
 import com.mbien.opencl.net.annotation.Unsupported;
 import com.mbien.opencl.net.annotation.Unsupported.Kind;
 import com.mbien.opencl.net.remote.CLRemoteBinding;
@@ -122,7 +123,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
 
         out.println();
         out.println("buffer.flip();");
-        out.println("channel.write(buffer); // remote method call");
+        out.println("write(channel, buffer); // remote method call");
 
         out.println();
         out.println("buffer.rewind();");
@@ -209,6 +210,7 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
 
         boolean inbound = isInbound(p, annotations);
         boolean outbound = isOutbound(p, annotations);
+        boolean large = isAnnotatedWith(p, annotations, Large.class);
         boolean unsupported = isAnnotatedWith(p, annotations, Unsupported.class);
 
         if(unsupported) {
@@ -273,8 +275,12 @@ public class ClientBindingGenerator extends NetworkBindingGenerator {
             }
 
             if(inbound) {
-                if(NativeBuffer.class.isAssignableFrom(parameter) || Buffer.class.isAssignableFrom(parameter)){
-                    out.println("putBuffer(buffer, "+paramName+");");
+                if(NativeBuffer.class.isAssignableFrom(parameter) || Buffer.class.isAssignableFrom(parameter)) {
+                    if(large) {
+                        out.println("writeLargeBuffer(channel, buffer, "+paramName+");");
+                    }else{
+                        out.println("putBuffer(buffer, "+paramName+");");
+                    }
                 }else if(parameter.equals(String.class)) {
                     out.println("putString(buffer, "+paramName+");");
                 }else{

@@ -32,7 +32,7 @@ public class NetBuffersTest {
                 ByteBuffer buffer = newDirectByteBuffer(16);
                 DebugChannel debugChannel = new DebugChannel(wb, null);
 
-                NetBuffers.writeLargeBuffer(debugChannel, newDirectIntBuffer(ints), buffer);
+                NetBuffers.writeLargeBuffer(debugChannel, buffer, newDirectIntBuffer(ints));
                 assertEquals(ints.length*SIZEOF_INT+SIZEOF_INT, wb.position());
 
                 wb.rewind();
@@ -46,7 +46,7 @@ public class NetBuffersTest {
                 ByteBuffer buffer = newDirectByteBuffer(32);
                 DebugChannel debugChannel = new DebugChannel(wb, null);
 
-                NetBuffers.writeLargeBuffer(debugChannel, newDirectLongBuffer(longs), buffer);
+                NetBuffers.writeLargeBuffer(debugChannel, buffer, newDirectLongBuffer(longs));
                 assertEquals(longs.length*SIZEOF_LONG+SIZEOF_INT, wb.position());
 
                 wb.rewind();
@@ -60,7 +60,7 @@ public class NetBuffersTest {
                 ByteBuffer buffer = newDirectByteBuffer(32);
                 DebugChannel debugChannel = new DebugChannel(wb, null);
 
-                NetBuffers.writeLargeBuffer(debugChannel, newDirectByteBuffer(bytes), buffer);
+                NetBuffers.writeLargeBuffer(debugChannel, buffer, newDirectByteBuffer(bytes));
                 assertEquals(bytes.length*SIZEOF_BYTE+SIZEOF_INT, wb.position());
 
                 wb.rewind();

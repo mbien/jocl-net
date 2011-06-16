@@ -102,7 +102,6 @@ public class CLNetworkTest {
 
         out.println("time needed: "+(System.currentTimeMillis()-time));
 
-        network.shutdownNode();
     }
 
     @Test
@@ -156,7 +155,6 @@ public class CLNetworkTest {
         }
 //        }
 
-        network.shutdownNode();
     }
 
 
@@ -254,8 +252,6 @@ public class CLNetworkTest {
         }finally{
             mc.release();
         }
-
-        network.shutdownNode();
 
     }
     
