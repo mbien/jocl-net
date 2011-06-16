@@ -3,6 +3,7 @@
  */
 package com.mbien.generator;
 
+import com.mbien.opencl.net.util.DebugChannel;
 import com.jogamp.common.nio.NativeSizeBuffer;
 import com.mbien.opencl.net.CLHandler;
 import com.mbien.opencl.net.remote.RemoteNode;
@@ -362,48 +363,6 @@ public class GeneratorTest {
             fail("compilation failed");
         }
 
-    }
-
-    private static class DebugChannel implements ByteChannel {
-
-        private boolean open = true;
-
-        private final ByteBuffer wb;
-        private final ByteBuffer rb;
-
-        public DebugChannel(ByteBuffer wb, ByteBuffer rb) {
-            this.wb = wb;
-            this.rb = rb;
-        }
-
-        @Override
-        public int read(ByteBuffer dst) throws IOException {
-            int remaining = dst.remaining();
-            if(rb.remaining() < remaining) {
-                throw new RuntimeException("readbuffer to small, requested "+remaining+"bytes");
-            }
-            rb.limit(rb.position()+remaining);
-            dst.put(rb);
-            rb.limit(rb.capacity());
-            return remaining;
-        }
-
-        @Override
-        public boolean isOpen() {
-            return open;
-        }
-
-        @Override
-        public void close() throws IOException {
-            open = false;
-        }
-
-        @Override
-        public int write(ByteBuffer src) throws IOException {
-            int remaining = src.remaining();
-            wb.put(src);
-            return remaining;
-        }
     }
 
 
