@@ -8,6 +8,7 @@ import com.jogamp.opencl.spi.CLInfoAccessor;
 import com.jogamp.opencl.CLDevice;
 import com.jogamp.opencl.CLDevice.Type;
 import com.jogamp.opencl.CLPlatform;
+import com.jogamp.opencl.llb.CLCommandQueueBinding;
 import com.mbien.opencl.net.handler.CLCommandQueueHandler;
 
 import com.mbien.opencl.net.remote.CLRemoteAccessorFactory.CLRemotePlatformInfoAccessor;
@@ -50,6 +51,7 @@ public class LocalNode extends GridNode {
     private static final Logger LOGGER = Logger.getLogger(LocalNode.class.getName());
     private final InetSocketAddress listeningAddress = new InetSocketAddress(10000);
     private CLHandler[] handlers;
+    private CLCommandQueueBinding queueBinding;
 
     public LocalNode(String group, String name) {
         super(group, name, null);
@@ -61,9 +63,13 @@ public class LocalNode extends GridNode {
      */
     public void startServer(CLPlatform[] platforms) {
 
+        if(queueBinding == null) {
+            queueBinding = CLPlatform.getLowLevelCLInterface();
+        }
+
         initializeHandlers(platforms);
 
-        ServerSocketChannel server = null;
+        final ServerSocketChannel server;
         try {
             server = ServerSocketChannel.open();
             server.socket().bind(listeningAddress);
@@ -72,47 +78,54 @@ public class LocalNode extends GridNode {
             return;
         }
 
-        ByteBuffer buffer = newDirectByteBuffer(SIZEOF_BYTE + SIZEOF_INT);
+        new Thread("cl-service") {
+            @Override
+            public void run() {
 
-        SocketChannel channel = null;
-        while (true) {
-            try {
-                if(channel == null || !channel.isOpen()) {
-                    channel = server.accept();
-                }
-                
-                int bytesRead = channel.read(buffer);
+                ByteBuffer buffer = newDirectByteBuffer(SIZEOF_BYTE + SIZEOF_INT);
 
-                if(bytesRead < 0) {
-                    LOGGER.warning("client terminated connection.");
-                    channel.close();
-                }else{
-                    buffer.rewind();
-
-                    byte accessorID = buffer.get();
-                    int methodID = buffer.getInt();
-                    buffer.rewind();
-
-                    if (accessorID >= 0 && accessorID < handlers.length) {
-                        CLHandler accessor = handlers[accessorID];
-                        accessor.handle(channel, methodID);
-                    } else {
-                        LOGGER.warning("ignoring command: [" + accessorID + ", " + methodID + "]");
-                    }
-                }
-
-            } catch (Exception ex) {
-                LOGGER.log(SEVERE, "exception in server loop ["+channel+"]", ex);
-                buffer.rewind();
-                if (channel != null) {
+                SocketChannel channel = null;
+                while (true) {
                     try {
-                        channel.close();
-                    } catch (Exception ex2) {
-                        LOGGER.log(WARNING, "can not close channel.", ex2);
+                        if(channel == null || !channel.isOpen()) {
+                            channel = server.accept();
+                        }
+
+                        int bytesRead = channel.read(buffer);
+
+                        if(bytesRead < 0) {
+                            LOGGER.warning("client terminated connection.");
+                            channel.close();
+                        }else{
+                            buffer.rewind();
+
+                            byte accessorID = buffer.get();
+                            int methodID = buffer.getInt();
+                            buffer.rewind();
+
+                            if (accessorID >= 0 && accessorID < handlers.length) {
+                                CLHandler accessor = handlers[accessorID];
+                                accessor.handle(channel, methodID);
+                            } else {
+                                LOGGER.warning("ignoring command: [" + accessorID + ", " + methodID + "]");
+                            }
+                        }
+
+                    } catch (Exception ex) {
+                        LOGGER.log(SEVERE, "exception in server loop ["+channel+"]", ex);
+                        buffer.rewind();
+                        if (channel != null) {
+                            try {
+                                channel.close();
+                            } catch (Exception ex2) {
+                                LOGGER.log(WARNING, "can not close channel.", ex2);
+                            }
+                        }
                     }
                 }
             }
-        }
+        }.start();
+
     }
 
     private void insertHandler(int index, CLHandler handler) {
@@ -149,9 +162,13 @@ public class LocalNode extends GridNode {
         insertHandler(CLRemoteProgramBinding.AID, new CLProgramHandler(cl));
         insertHandler(CLRemoteKernelBinding.AID, new CLKernelHandler(cl));
         insertHandler(CLRemoteMemoryBinding.AID, new CLMemoryHandler(cl));
-        insertHandler(CLRemoteCommandQueueBinding.AID, new CLCommandQueueHandler(cl));
+        insertHandler(CLRemoteCommandQueueBinding.AID, new CLCommandQueueHandler(queueBinding));
         insertHandler(CLRemoteEventBinding.AID, new CLEventHandler(cl));
         insertHandler(CLRemoteSamplerBinding.AID, new CLSamplerHandler(cl));
+    }
+
+    public void setCLQueueBinding(CLCommandQueueBinding binding) {
+        this.queueBinding = binding;
     }
 
     private static class CLStaticPlatformHandler extends CLHandler {
