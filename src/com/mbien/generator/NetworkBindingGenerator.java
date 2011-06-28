@@ -59,6 +59,7 @@ public abstract class NetworkBindingGenerator {
         String base = "/home/mbien/NetBeansProjects/JOGAMP/jocl-net/gensrc/";
         String clientPackage = "com/mbien/opencl/net/remote";
         String serverPackage = "com/mbien/opencl/net/handler";
+        String delegatePackage = "com/mbien/opencl/net/delegate";
 
         generateBinding((byte)3, "Context", RemoteContextBinding.class, CLContextBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)4, "Program", RemoteProgramBinding.class, CLProgramBinding.class, base, clientPackage, serverPackage);
@@ -67,7 +68,9 @@ public abstract class NetworkBindingGenerator {
         generateBinding((byte)7, "CommandQueue", RemoteCommandQueueBinding.class, CLCommandQueueBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)8, "Event", RemoteEventBinding.class, CLEventBinding.class, base, clientPackage, serverPackage);
         generateBinding((byte)9, "Sampler", RemoteSamplerBinding.class, CLSamplerBinding.class, base, clientPackage, serverPackage);
-        
+
+        DelegateGenerator delegateGenerator = new DelegateGenerator(base, delegatePackage, "CLCommandQueueDelegate");
+        delegateGenerator.generateBindingFor(CLCommandQueueBinding.class);
     }
 
     public static void generateBinding(byte id, String name, Class<?> targetInterface, Class<?> implInterface, String base, String clientPackage, String serverPackage) throws IOException {

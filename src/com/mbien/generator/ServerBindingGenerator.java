@@ -16,7 +16,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
-import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.reflect.Modifier.*;
@@ -70,7 +69,7 @@ public class ServerBindingGenerator extends NetworkBindingGenerator {
         out.indent();
 
         out.println();
-        out.println("private final "+impl.getSimpleName()+" impl;");
+        out.println("public final "+impl.getSimpleName()+" impl;");
         out.println();
         out.println("public "+name+"("+impl.getSimpleName()+" impl) {");
         out.println("    this.impl = impl;");

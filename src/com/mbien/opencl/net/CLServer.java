@@ -4,10 +4,10 @@
 package com.mbien.opencl.net;
 
 import com.jogamp.opencl.CLPlatform;
-import java.io.FileInputStream;
+import com.mbien.opencl.tracer.QueuePoller;
+import com.mbien.opencl.net.delegate.CLCommandQueueDelegate;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.logging.LogManager;
 
 /**
  *
@@ -23,6 +23,11 @@ public class CLServer {
         network.startNode("jocl-server-"+InetAddress.getLocalHost().getHostName());
         
         LocalNode node = network.getLocalNode();
+
+//        CLCommandQueueDelegate delegate = new CLCommandQueueDelegate(CLPlatform.getLowLevelCLInterface());
+//        node.setCLQueueBinding(delegate);
+//        new QueuePoller(delegate).start();
+
         node.startServer(CLPlatform.listCLPlatforms());
 
     }
