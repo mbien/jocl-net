@@ -83,63 +83,95 @@ public class NetBuffers {
     }
 
     public static ShortBuffer readBuffer(ReadableByteChannel channel, ShortBuffer dest, ByteBuffer temp) throws IOException {
-        temp.rewind();
-        int remaining = dest.remaining();
-        temp.limit(remaining*SIZEOF_SHORT);
-        read(channel, temp);
-        for(int i = 0; i < remaining; i++) {
-            dest.put(temp.getShort(i*SIZEOF_SHORT));
-        }
+        do {
+            int remaining = dest.remaining()*SIZEOF_SHORT;
+            if(temp.capacity() < remaining) {
+                temp.clear();
+            }else{
+                temp.rewind().limit(remaining);
+            }
+            read(channel, temp);
+            temp.rewind();
+            do{
+                dest.put(temp.getShort());
+            }while(temp.hasRemaining());
+        }while(dest.hasRemaining());
         return dest;
     }
     
     public static IntBuffer readBuffer(ReadableByteChannel channel, IntBuffer dest, ByteBuffer temp) throws IOException {
-        temp.rewind();
-        int remaining = dest.remaining();
-        temp.limit(remaining*SIZEOF_INT);
-        read(channel, temp);
-        for(int i = 0; i < remaining; i++) {
-            dest.put(temp.getInt(i*SIZEOF_INT));
-        }
+        do {
+            int remaining = dest.remaining()*SIZEOF_INT;
+            if(temp.capacity() < remaining) {
+                temp.clear();
+            }else{
+                temp.rewind().limit(remaining);
+            }
+            read(channel, temp);
+            temp.rewind();
+            do{
+                dest.put(temp.getInt());
+            }while(temp.hasRemaining());
+        }while(dest.hasRemaining());
         return dest;
     }
 
     public static LongBuffer readBuffer(ReadableByteChannel channel, LongBuffer dest, ByteBuffer temp) throws IOException {
-        temp.rewind();
-        int remaining = dest.remaining();
-        temp.limit(remaining*SIZEOF_LONG);
-        read(channel, temp);
-        for(int i = 0; i < remaining; i++) {
-            dest.put(temp.getInt(i*SIZEOF_LONG));
-        }
+        do {
+            int remaining = dest.remaining()*SIZEOF_LONG;
+            if(temp.capacity() < remaining) {
+                temp.clear();
+            }else{
+                temp.rewind().limit(remaining);
+            }
+            read(channel, temp);
+            temp.rewind();
+            do{
+                dest.put(temp.getLong());
+            }while(temp.hasRemaining());
+        }while(dest.hasRemaining());
         return dest;
     }
 
     public static FloatBuffer readBuffer(ReadableByteChannel channel, FloatBuffer dest, ByteBuffer temp) throws IOException {
-        temp.rewind();
-        int remaining = dest.remaining();
-        temp.limit(remaining*SIZEOF_FLOAT);
-        read(channel, temp);
-        for(int i = 0; i < remaining; i++) {
-            dest.put(temp.getInt(i*SIZEOF_FLOAT));
-        }
+        do {
+            int remaining = dest.remaining()*SIZEOF_FLOAT;
+            if(temp.capacity() < remaining) {
+                temp.clear();
+            }else{
+                temp.rewind().limit(remaining);
+            }
+            read(channel, temp);
+            temp.rewind();
+            do{
+                dest.put(temp.getFloat());
+            }while(temp.hasRemaining());
+        }while(dest.hasRemaining());
         return dest;
     }
 
     public static DoubleBuffer readBuffer(ReadableByteChannel channel, DoubleBuffer dest, ByteBuffer temp) throws IOException {
-        temp.rewind();
-        int remaining = dest.remaining();
-        temp.limit(remaining*SIZEOF_DOUBLE);
-        read(channel, temp);
-        for(int i = 0; i < remaining; i++) {
-            dest.put(temp.getInt(i*SIZEOF_DOUBLE));
-        }
+        do {
+            int remaining = dest.remaining()*SIZEOF_DOUBLE;
+            if(temp.capacity() < remaining) {
+                temp.clear();
+            }else{
+                temp.rewind().limit(remaining);
+            }
+            read(channel, temp);
+            temp.rewind();
+            do{
+                dest.put(temp.getDouble());
+            }while(temp.hasRemaining());
+        }while(dest.hasRemaining());
         return dest;
     }
 
     public static <T extends Buffer> T readBuffer(ReadableByteChannel channel, T dest, ByteBuffer temp) throws IOException {
         if(dest instanceof ByteBuffer) {
             return (T) readBuffer(channel, (ByteBuffer)dest);
+        }else if(dest instanceof ShortBuffer) {
+            return (T) readBuffer(channel, (ShortBuffer)dest, temp);
         }else if(dest instanceof IntBuffer) {
             return (T) readBuffer(channel, (IntBuffer)dest, temp);
         }else if(dest instanceof LongBuffer) {

@@ -19,7 +19,7 @@ import com.jogamp.opencl.CLSampler.FilteringMode;
 import com.jogamp.opencl.CLUserEvent;
 import com.jogamp.opencl.util.CLMultiContext;
 import com.mbien.opencl.net.remote.RemoteNode;
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -194,16 +194,16 @@ public class CLNetworkTest {
                 }
 
                 // buffer test
-                int size = 1024;
-                CLBuffer<?> bufferA = context.createBuffer(size, Mem.READ_WRITE);
-                System.out.println(bufferA +" size: "+bufferA.getCLSize());
-                assertEquals(size, bufferA.getCLSize());
+                int size = 4096;
+                CLBuffer<?> bufferA = context.createBuffer(size*SIZEOF_INT, Mem.READ_WRITE);
+                out.println(bufferA +" size: "+bufferA.getCLSize());
+                assertEquals(size*4, bufferA.getCLSize());
 
-                CLBuffer<?> bufferB = context.createBuffer(size, Mem.READ_WRITE);
+                CLBuffer<?> bufferB = context.createBuffer(size*SIZEOF_INT, Mem.READ_WRITE);
 
-                ByteBuffer reference = newDirectByteBuffer(size);
+                IntBuffer reference = newDirectIntBuffer(size);
                 while(reference.hasRemaining()) {
-                    reference.putInt(rnd.nextInt());
+                    reference.put(rnd.nextInt());
                 }
                 reference.rewind();
 
@@ -213,13 +213,13 @@ public class CLNetworkTest {
                 CLDevice[] devices = context.getDevices();
                 for (CLDevice device : devices) {
                     CLCommandQueue queue = device.createCommandQueue();
-                    System.out.println(queue);
+                    out.println(queue);
 
                     // write, copy read, check
                     queue.putWriteBuffer(bufferA, true);
                     queue.putCopyBuffer(bufferA, bufferB);
 
-                    CLBuffer<ByteBuffer> result = bufferB.cloneWith(newDirectByteBuffer(64));
+                    CLBuffer<IntBuffer> result = bufferB.cloneWith(newDirectIntBuffer(size));
                     queue.putReadBuffer(result, true);
 
                     while(result.getBuffer().hasRemaining()) {
@@ -229,11 +229,11 @@ public class CLNetworkTest {
                     result.getBuffer().rewind();
 
                     // execute kernel, check again
-                    kernels.get("compute").setArg(0, result).setArg(1, size/4);
-                    queue.put1DRangeKernel(kernels.get("compute"), 0, size/4, 0);
+                    kernels.get("compute").setArg(0, result).setArg(1, size);
+                    queue.put1DRangeKernel(kernels.get("compute"), 0, size, 0);
                     queue.putReadBuffer(result, true);
                     while(result.getBuffer().hasRemaining()) {
-                        assertEquals(reference.getInt()+1, result.getBuffer().getInt());
+                        assertEquals(reference.get()+1, result.getBuffer().get());
                     }
                     reference.rewind();
 
