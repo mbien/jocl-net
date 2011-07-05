@@ -3,7 +3,6 @@
  */
 package com.mbien.opencl.net.demo;
 
-import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice.Type;
 import com.jogamp.opencl.CLPlatform;
@@ -11,9 +10,8 @@ import com.jogamp.opencl.util.CLMultiContext;
 import com.jogamp.opencl.util.CLPlatformFilters;
 import com.jogamp.opencl.util.Filter;
 import com.jogamp.opencl.util.concurrent.CLCommandQueuePool;
-import com.jogamp.opencl.util.concurrent.CLQueueContext;
-import com.jogamp.opencl.util.concurrent.CLQueueContextFactory;
 import com.mbien.opencl.net.CLNetwork;
+import com.mbien.opencl.net.demo.SHA2BreakerContext.SHA2QueueContextFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -22,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 
 
 /**
- *
+ * brute force password breaker sample.
  * @author Michael Bien
  */
 public class SHA2Breaker {
@@ -53,10 +51,7 @@ public class SHA2Breaker {
         );
     }
 
-
-
     public static void main(String[] args) throws NoSuchAlgorithmException, InterruptedException, ExecutionException {
-
 
 //        final String pw = "bdbkgc";
         final String pw = "Agc*";
@@ -64,22 +59,13 @@ public class SHA2Breaker {
 
 
         CLMultiContext mc = CLMultiContext.create(getPlatfoms());
-//        CLMultiContext mc = CLMultiContext.create(getNWPlatfoms());
 
         for (CLContext ctx : mc.getContexts()) {
             System.out.println(ctx);
         }
 
         try{
-
-            CLQueueContextFactory<SHA2BreakerContext> factory = new CLQueueContextFactory<SHA2BreakerContext>() {
-                @Override public SHA2BreakerContext setup(CLCommandQueue queue, CLQueueContext old) {
-                    return new SHA2BreakerContext(queue, hash, pw.length(), ' ', 95);
-                }
-            };
-
-//            String pass = new SHA2BreakerTask().execute(factory.setup(mc.getContexts().get(0).getMaxFlopsDevice().createCommandQueue(), null));
-//            System.out.println(pass);
+            SHA2QueueContextFactory factory = new SHA2QueueContextFactory(hash, pw.length());
 
             CLCommandQueuePool pool = CLCommandQueuePool.create(factory, mc);
 
@@ -95,13 +81,8 @@ public class SHA2Breaker {
                 System.out.println(task.getDeviceName()+" made "+task.getIterations()+" iterations");
             }
             
-//            synchronized(SHA2Breaker.class) {
-//                SHA2Breaker.class.wait();
-//            }
-            
         }finally{
-//            mc.release();
-//            nw.shutdownNode();
+            mc.release();
         }
     }
 

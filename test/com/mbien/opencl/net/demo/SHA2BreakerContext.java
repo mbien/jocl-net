@@ -11,6 +11,7 @@ import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLProgram;
 import com.jogamp.opencl.CLResource;
 import com.jogamp.opencl.util.concurrent.CLQueueContext;
+import com.jogamp.opencl.util.concurrent.CLQueueContextFactory;
 import java.io.IOException;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
@@ -140,4 +141,19 @@ public class SHA2BreakerContext extends CLQueueContext {
         return resources.isEmpty();
     }
 
+
+    public static class SHA2QueueContextFactory extends CLQueueContextFactory<SHA2BreakerContext> {
+        
+        private final byte[] hash;
+        private final int pwlenght;
+
+        public SHA2QueueContextFactory(byte[] hash, int pwlenght) {
+            this.hash = hash;
+            this.pwlenght = pwlenght;
+        }
+
+        @Override public SHA2BreakerContext setup(CLCommandQueue queue, CLQueueContext old) {
+            return new SHA2BreakerContext(queue, hash, pwlenght, ' ', 95);
+        }
+    };
 }
